@@ -166,6 +166,29 @@ button.b:active,.side nav button:active,.subj:active,.out:active,.up:active{tran
 .lp-hero p{margin:14px 0 0;font-size:.95rem;color:rgba(255,255,255,.88)}
 .lp-art{position:relative;display:flex;justify-content:center;background:radial-gradient(circle,rgba(255,255,255,.28),transparent 66%)}.lp-art svg{width:100%;max-width:500px;height:auto;display:block}
 @media(max-width:860px){#lp{padding:0}.lp-card{grid-template-columns:1fr;border-radius:0}.lp-right{order:-1;padding:28px 24px 8px}.lp-art svg{max-width:240px}.lp-left{padding:28px 24px}.lp-fw{padding:24px 0}}
+
+/* video notes + subject videos */
+.vcur{margin-bottom:14px}
+.vhead{gap:14px;margin-bottom:12px}
+.vhead img{width:150px;aspect-ratio:16/9;object-fit:cover;border-radius:12px;flex:none;background:var(--soft)}
+.vnotes{background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:4px 20px 14px;max-height:540px;overflow:auto}
+.vnotes h3.vh{font-size:1rem;color:var(--accent);margin:18px 0 6px}
+.vnotes p{margin:6px 0}.vnotes ul{margin:4px 0;padding-left:20px}.vnotes li{margin:3px 0}
+.vchat{display:flex;flex-direction:column;gap:10px;max-height:340px;overflow-y:auto;padding:2px;margin:10px 0}
+.vchips,.vpills{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0 0}
+.vchips button,.vpills button{font:inherit;font-size:.82rem;font-weight:600;color:var(--accent);background:var(--bg);border:1px solid var(--line);border-radius:99px;padding:5px 13px;cursor:pointer;transition:transform .2s,background .2s,border-color .2s}
+.vchips button:hover,.vpills button:hover{background:var(--soft);border-color:var(--accent);transform:translateY(-2px)}
+.vc{padding:0;overflow:hidden;display:flex;flex-direction:column}
+.vc .vt{display:block;aspect-ratio:16/9;background:var(--soft)}.vc img{width:100%;height:100%;object-fit:cover;display:block}
+.vc .vb{padding:12px 14px 14px;display:flex;flex-direction:column;gap:6px;flex:1}
+.vc .vb b{font-size:.9rem;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.vc .vb .row{margin-top:auto;padding-top:6px;gap:8px}
+.vsm{padding:6px 16px!important;font-size:.82rem}
+.vbad{color:var(--bad)}
+details summary{outline-offset:3px}
+@media (max-width:720px){.vhead img{width:110px}}
+/* fix: sidebar nav made the whole page wider than the phone screen */
+@media (max-width:980px){.shell{grid-template-columns:minmax(0,1fr)}.side{min-width:0}.side nav button{flex:none}}
 </style>
 </head>
 <body>
@@ -336,7 +359,7 @@ function kukPapers(){
 }
 function vRes(){
   var s=rsub?sub(rsub):null;
-  return '<h1>Resources &amp; notes</h1><p class="sub">Question papers, notes and saved links for each subject.</p>'+kukPapers()+'<label>Subject<select id="rs"><option value="">Select a subject…</option>'+S.subjects.map(function(x){return '<option value="'+x.id+'"'+(x.id==rsub?' selected':'')+'>'+esc(x.name)+'</option>'}).join('')+'</select></label>'+
+  return '<h1>Resources &amp; notes</h1><p class="sub">Video notes, YouTube lectures, question papers and saved links for each subject.</p>'+vidUI()+kukPapers()+'<label>Subject<select id="rs"><option value="">Select a subject…</option>'+S.subjects.map(function(x){return '<option value="'+x.id+'"'+(x.id==rsub?' selected':'')+'>'+esc(x.name)+'</option>'}).join('')+'</select></label>'+
   (s?'<div class="g2"><div class="card"><h2>Quick notes</h2><textarea id="nt">'+esc(s.notes)+'</textarea><p><button class="b" data-act="saveNote">Save notes</button></p></div><div class="card"><h2>Saved links</h2><div class="row" style="margin-bottom:10px"><input id="lk" placeholder="https://…" style="flex:1"><button class="b" data-act="addLink">Add</button></div>'+(s.links.map(function(l,i){var ok=/^https?:\/\//i.test(l);return '<div class="link">'+(ok?'<a href="'+esc(l)+'" target="_blank" rel="noopener">'+esc(l)+'</a>':'<span>'+esc(l)+'</span>')+'<button class="x" data-dl="'+i+'" aria-label="Remove link">×</button></div>'}).join('')||'<p class="muted">No links saved yet.</p>')+'</div></div>':'<p class="muted">Select a subject to view notes and links.</p>');
 }
 function vSet(){
@@ -497,6 +520,155 @@ document.addEventListener('change',function(e){
 });
 $('fSub').addEventListener('submit',function(){S.subjects.push({id:Date.now(),name:$('sn').value.trim(),exam:$('sd').value,notes:'',links:[],units:[]});save();render()});
 $('fUnit').addEventListener('submit',function(){sub(cur).units.push({id:Date.now(),name:$('un').value.trim(),due:$('ud').value,done:false});save();render()});
+
+/* ===== video -> AI notes, video Q&A, subject video finder ===== */
+function vids(){return S.vids||(S.vids=[])}
+var VS={url:'',tr:'',trOpen:false,lang:'English',topic:'',tl:'any',q:'',ssub:'',busy:false,msg:'',cur:null,chat:[],askBusy:false,rel:null,relBusy:false,res:null,sbusy:false,smsg:''};
+var QQ=['Explain this video in very simple words','Give 5 important exam questions with answers','What are the key points to remember?'];
+function thumb(id){return 'https://i.ytimg.com/vi/'+id+'/mqdefault.jpg'}
+function ytl(q){return 'https://www.youtube.com/results?search_query='+encodeURIComponent(q)}
+function fmt(t){
+  var o='',ul=false;
+  String(t).split('\n').forEach(function(l){
+    l=l.trim();var m;
+    if(!l){if(ul){o+='</ul>';ul=false}return}
+    l=esc(l).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>');
+    if(m=/^#{1,4}\s+(.*)$/.exec(l)){if(ul){o+='</ul>';ul=false}o+='<h3 class="vh">'+m[1]+'</h3>'}
+    else if(m=/^[-\u2022*]\s+(.*)$/.exec(l)){if(!ul){o+='<ul>';ul=true}o+='<li>'+m[1]+'</li>'}
+    else{if(ul){o+='</ul>';ul=false}o+='<p>'+l+'</p>'}
+  });
+  return o+(ul?'</ul>':'');
+}
+function plain(t){return String(t).replace(/^#{1,4}\s+/gm,'').replace(/\*\*(.+?)\*\*/g,'$1')}
+function flash(t){var f=$('vfl');if(f){f.textContent=t;setTimeout(function(){var g=$('vfl');if(g&&g.textContent===t)g.textContent=''},3000)}}
+/* re-render the Resources tab but keep scroll, focus and caret where they were */
+function rr(){
+  if(view!=='res')return;
+  var a=document.activeElement,id=a&&a.id,s0=a&&a.selectionStart,s1=a&&a.selectionEnd,y=window.scrollY;
+  render();
+  if(id&&/^v/.test(id)){var n=$(id);if(n){n.focus();try{n.setSelectionRange(s0,s1)}catch(x){}}}
+  window.scrollTo({top:y,behavior:'instant'});
+  var c=$('vch');if(c)c.scrollTop=c.scrollHeight;
+}
+async function api(u,body){
+  var r=await fetch(u,body?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}:undefined);
+  var d={};try{d=await r.json()}catch(e){}
+  if(!r.ok){var er=new Error(d.error||'Request failed ('+r.status+')');er.need=d.needTranscript;throw er}
+  return d;
+}
+function vcard(v){
+  var id=esc(v.id),u='https://www.youtube.com/watch?v='+id;
+  return '<div class="card vc"><a class="vt" href="'+u+'" target="_blank" rel="noopener" aria-label="Watch '+esc(v.title)+'"><img src="'+thumb(id)+'" alt="" loading="lazy"></a><div class="vb"><b>'+esc(v.title)+'</b><span class="muted">'+esc(v.channel||'')+(v.dur?' \u00b7 '+esc(v.dur):'')+(v.views?' \u00b7 '+esc(v.views):'')+'</span><div class="row"><a class="btn vsm" href="'+u+'" target="_blank" rel="noopener">Watch</a><button class="b alt vsm" data-vd="mk:'+id+'">Make notes</button></div></div></div>';
+}
+function vidUI(){
+  var c=VS.cur,h='';
+  /* 1) link -> notes */
+  h+='<div class="card" style="margin-bottom:14px"><h2>\ud83c\udfac Video \u2192 AI notes</h2><p class="muted">Paste a YouTube link. I read its captions and write exam-ready notes. Then you can ask doubts about the video.</p>'+
+  '<form data-vf="notes"><div class="row"><input id="vu" type="text" placeholder="https://www.youtube.com/watch?v=\u2026" value="'+esc(VS.url)+'" style="flex:1;min-width:220px" aria-label="YouTube link" autocomplete="off"><select id="vl" aria-label="Notes language"><option'+(VS.lang==='English'?' selected':'')+'>English</option><option'+(VS.lang==='Hinglish'?' selected':'')+'>Hinglish</option></select><button class="b" type="submit"'+(VS.busy?' disabled':'')+'>'+(VS.busy?'Working\u2026':'Make notes')+'</button></div>'+
+  '<details id="vdt"'+(VS.trOpen?' open':'')+' style="margin-top:10px"><summary class="muted" style="cursor:pointer">No captions? Paste the transcript instead</summary><textarea id="vtr" placeholder="On YouTube: more \u2192 Show transcript \u2192 copy all \u2192 paste here" style="margin-top:8px;min-height:110px">'+esc(VS.tr)+'</textarea></details></form>'+
+  (VS.msg?'<p class="'+(VS.busy?'muted':'vbad')+'" role="status">'+esc(VS.msg)+'</p>':'')+'</div>';
+  /* 2) notes + Q&A + related */
+  if(c){
+    h+='<div class="card vcur"><div class="row vhead">'+(c.url?'<img src="'+thumb(esc(c.id))+'" alt="">':'')+'<div style="flex:1;min-width:180px"><b>'+esc(c.title)+'</b><br><span class="muted">'+esc(c.channel||'')+'</span></div>'+(c.url?'<a class="btn vsm" href="'+esc(c.url)+'" target="_blank" rel="noopener">Watch on YouTube</a>':'')+'</div>'+
+    (c.partial?'<p class="muted">This video is very long, so the notes cover roughly the first part of it.</p>':'')+
+    '<div class="vnotes">'+fmt(c.notes)+'</div>'+
+    '<div class="row" style="margin-top:12px"><button class="b alt" data-vd="copy">Copy notes</button>'+
+    (S.subjects.length?'<select id="vsub" aria-label="Subject to save into">'+S.subjects.map(function(x,i){var sel=VS.ssub?x.id==VS.ssub:i===0;return '<option value="'+x.id+'"'+(sel?' selected':'')+'>'+esc(x.name)+'</option>'}).join('')+'</select><button class="b" data-vd="save">Save to subject notes</button>':'')+
+    '<span id="vfl" class="muted" role="status"></span></div>'+
+    '<h2 style="margin-top:22px">Ask about this video</h2>'+
+    (!VS.chat.length&&!VS.askBusy?'<div class="vchips">'+QQ.map(function(x,i){return '<button type="button" data-vd="qq:'+i+'">'+esc(x)+'</button>'}).join('')+'</div>':'')+
+    ((VS.chat.length||VS.askBusy)?'<div class="vchat" id="vch" aria-live="polite">'+VS.chat.map(function(m){return '<div class="m '+m.r+'">'+esc(m.t)+'</div>'}).join('')+(VS.askBusy?'<div class="m ai">Thinking\u2026</div>':'')+'</div>':'')+
+    '<form data-vf="ask" class="row" style="margin-top:10px"><input id="vq" placeholder="Ask a doubt about the video or the notes\u2026" maxlength="500" autocomplete="off" value="'+esc(VS.q)+'" style="flex:1;min-width:200px"><button class="b" type="submit"'+(VS.askBusy?' disabled':'')+'>Ask</button></form></div>'+
+    '<div class="row sec"><h2 style="margin:0">More videos on this topic</h2></div>'+
+    (VS.rel?(VS.rel.length?'<div class="grid" style="margin-bottom:14px">'+VS.rel.map(vcard).join('')+'</div>':'<p class="muted">Could not load suggestions. <a href="'+ytl(c.title)+'" target="_blank" rel="noopener" style="color:var(--accent)">Search on YouTube</a></p>'):VS.relBusy?'<p class="muted">Finding videos\u2026</p>':'<button class="b alt" data-vd="rel">Suggest related videos</button>');
+  }
+  /* 3) subject -> videos */
+  var names=[];S.subjects.forEach(function(x){names.push(x.name)});QB.forEach(function(x){var n=x[0].replace(/\s*\(.*\)/,'');if(names.indexOf(n)<0)names.push(n)});
+  h+='<div class="card" style="margin:14px 0"><h2>\ud83d\udd0e Find videos for a subject</h2><p class="muted">Pick a subject or type any topic. I fetch YouTube lectures you can watch or turn into notes.</p>'+
+  '<form data-vf="find"><div class="row"><input id="vt" list="vsubs" placeholder="e.g. Data Structures, Kinematics\u2026" value="'+esc(VS.topic)+'" style="flex:1;min-width:220px" aria-label="Subject or topic" autocomplete="off"><datalist id="vsubs">'+names.map(function(n){return '<option value="'+esc(n)+'">'}).join('')+'</datalist>'+
+  '<select id="vtl" aria-label="Video language"><option value="any"'+(VS.tl==='any'?' selected':'')+'>Any language</option><option value="hi"'+(VS.tl==='hi'?' selected':'')+'>Hindi</option><option value="en"'+(VS.tl==='en'?' selected':'')+'>English</option></select><button class="b" type="submit"'+(VS.sbusy?' disabled':'')+'>'+(VS.sbusy?'Searching\u2026':'Find videos')+'</button></div></form>'+
+  '<div class="vpills">'+names.slice(0,14).map(function(n){return '<button type="button" data-vd="pick:'+esc(n)+'">'+esc(n)+'</button>'}).join('')+'</div>';
+  if(VS.sbusy)h+='<p class="muted" style="margin-top:12px">Searching YouTube\u2026</p>';
+  else if(VS.res){
+    h+=(VS.res.list.length?'<div class="grid" style="margin-top:14px">'+VS.res.list.map(vcard).join('')+'</div>':'<p class="'+(VS.smsg?'vbad':'muted')+'" style="margin-top:12px">'+esc(VS.smsg||'No videos found.')+'</p>')+
+    '<p style="margin:12px 0 0"><a class="btn vsm" style="background:var(--soft);color:var(--accent)" href="'+ytl(VS.res.q)+'" target="_blank" rel="noopener">See more on YouTube</a></p>';
+  }
+  h+='</div>';
+  /* 4) saved */
+  var sv=vids();
+  if(sv.length)h+='<div class="card" style="margin-bottom:14px"><h2>\ud83d\udcda My video notes</h2>'+sv.map(function(v){return '<div class="link"><button class="back" style="margin:0;text-align:left" data-vd="open:'+esc(v.id)+'">'+esc(v.title)+'</button><button class="x" data-vd="del:'+esc(v.id)+'" aria-label="Delete saved notes">\u00d7</button></div>'}).join('')+'</div>';
+  return h;
+}
+async function mkNotes(){
+  if(VS.busy)return;
+  if(!VS.url.trim()&&VS.tr.trim().length<200){VS.msg='Paste a YouTube link first.';rr();return}
+  VS.busy=true;VS.msg='Reading the video and writing notes\u2026 long videos can take up to a minute.';VS.cur=null;VS.chat=[];VS.rel=null;VS.q='';rr();
+  window.scrollTo({top:0,behavior:'instant'});
+  try{
+    var d=await api('/api/video/notes',{url:VS.url.trim(),transcript:VS.tr,lang:VS.lang});
+    VS.cur={id:d.id,title:d.title,channel:d.channel,notes:d.notes,url:d.url,partial:d.partial};
+    VS.msg='';VS.tr='';VS.trOpen=false;
+    S.vids=vids().filter(function(x){return x.id!==d.id});S.vids.unshift(VS.cur);S.vids=S.vids.slice(0,30);save();
+  }catch(e){VS.msg=e.message;if(e.need)VS.trOpen=true}
+  VS.busy=false;rr();
+  if(VS.cur)loadRel();
+}
+async function askV(){
+  var q=VS.q.trim();if(!q||!VS.cur||VS.askBusy)return;
+  var c=VS.cur,hist=VS.chat.filter(function(m){return !m.err}).slice(-6).map(function(m){return{role:m.r==='me'?'user':'assistant',content:m.t}});
+  VS.chat.push({r:'me',t:q});VS.q='';VS.askBusy=true;rr();
+  try{var d=await api('/api/video/ask',{id:c.id,title:c.title,notes:c.notes,question:q,history:hist});VS.chat.push({r:'ai',t:d.text})}
+  catch(e){VS.chat.push({r:'ai',t:e.message,err:1})}
+  VS.askBusy=false;rr();
+}
+function relQ(t){return String(t).split(/\s[|\-\u2013\u2014]\s/)[0].slice(0,80)}
+async function loadRel(){
+  var c=VS.cur;if(!c||VS.relBusy)return;VS.relBusy=true;rr();
+  try{var d=await api('/api/videos?q='+encodeURIComponent(relQ(c.title)));if(VS.cur===c)VS.rel=d.videos.filter(function(v){return v.id!==c.id}).slice(0,6)}
+  catch(e){if(VS.cur===c)VS.rel=[]}
+  VS.relBusy=false;rr();
+}
+async function findV(){
+  var t=VS.topic.trim();if(!t||VS.sbusy)return;
+  var q=t+' lecture'+(VS.tl==='hi'?' in hindi':VS.tl==='en'?' in english':'');
+  VS.sbusy=true;VS.smsg='';VS.res=null;rr();
+  try{var d=await api('/api/videos?q='+encodeURIComponent(q));VS.res={q:q,list:d.videos}}
+  catch(e){VS.res={q:q,list:[]};VS.smsg=e.message}
+  VS.sbusy=false;rr();
+}
+function saveN(){
+  var s=null,id=VS.ssub||(S.subjects[0]&&S.subjects[0].id);if(id)s=sub(id);
+  if(!s||!VS.cur){flash('Add a subject on the Dashboard first.');return}
+  s.notes=(s.notes?s.notes+'\n\n':'')+'\u2014 '+VS.cur.title+' \u2014\n'+plain(VS.cur.notes);save();flash('Saved to '+s.name+' notes \u2713');
+}
+function copyN(){
+  if(!VS.cur)return;var t=VS.cur.title+'\n\n'+plain(VS.cur.notes);
+  (navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(function(){flash('Copied \u2713')},function(){flash('Copy was blocked by the browser')});
+}
+document.addEventListener('click',function(e){
+  var t=e.target.closest('[data-vd]');if(!t)return;var a=t.dataset.vd;
+  if(a==='save')saveN();
+  else if(a==='copy')copyN();
+  else if(a==='rel')loadRel();
+  else if(a.indexOf('mk:')===0){VS.url='https://www.youtube.com/watch?v='+a.slice(3);VS.tr='';mkNotes()}
+  else if(a.indexOf('pick:')===0){VS.topic=a.slice(5);findV()}
+  else if(a.indexOf('qq:')===0){VS.q=QQ[+a.slice(3)];askV()}
+  else if(a.indexOf('open:')===0){var v=vids().filter(function(x){return x.id===a.slice(5)})[0];if(v){VS.cur=v;VS.chat=[];VS.rel=null;VS.q='';VS.msg='';rr();window.scrollTo({top:0,behavior:'instant'});loadRel()}}
+  else if(a.indexOf('del:')===0){if(confirm('Delete these video notes?')){var id=a.slice(4);S.vids=vids().filter(function(x){return x.id!==id});if(VS.cur&&VS.cur.id===id){VS.cur=null;VS.chat=[]}save();rr()}}
+});
+document.addEventListener('submit',function(e){
+  var f=e.target.dataset&&e.target.dataset.vf;if(!f)return;e.preventDefault();
+  if(f==='notes')mkNotes();else if(f==='ask')askV();else if(f==='find')findV();
+});
+document.addEventListener('input',function(e){
+  var t=e.target;
+  if(t.id==='vu')VS.url=t.value;else if(t.id==='vtr')VS.tr=t.value;else if(t.id==='vt')VS.topic=t.value;else if(t.id==='vq')VS.q=t.value;
+});
+document.addEventListener('change',function(e){
+  var t=e.target;
+  if(t.id==='vl')VS.lang=t.value;else if(t.id==='vtl')VS.tl=t.value;else if(t.id==='vsub')VS.ssub=t.value;
+});
+document.addEventListener('toggle',function(e){if(e.target.id==='vdt')VS.trOpen=e.target.open},true);
 window.__SS_KEY=KEY;theme();render();
 })();
 </script>
