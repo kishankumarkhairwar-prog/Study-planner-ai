@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Smart Study: Your Planner</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#fff;--surface:#fff;--ink:#12261b;--muted:#5d7567;--line:#d6eadc;--accent:#15803d;--soft:#dcf5e4;--on:#fff;--bad:#d9534f;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media not all{:root:not([data-theme="light"]){--bg:#0b1510;--surface:#121f18;--ink:#e8f5ec;--muted:#8fb09b;--line:#223a2c;--accent:#4ade80;--soft:#1b3326;--on:#052e16;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0b1510;--surface:#121f18;--ink:#e8f5ec;--muted:#8fb09b;--line:#223a2c;--accent:#4ade80;--soft:#1b3326;--on:#052e16;color-scheme:dark}
+*{box-sizing:border-box}html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:Manrope,system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.5}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+header{background:var(--surface);border-bottom:3px solid var(--accent);position:sticky;top:0;z-index:5}
+.bar{max-width:1040px;margin:0 auto;padding:12px 20px;display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+.logo{font-weight:800;display:flex;align-items:center;gap:8px;margin-right:auto}
+.logo svg{width:32px;height:32px;color:var(--accent);flex:none}
+nav{display:flex;gap:4px;flex-wrap:wrap}
+nav button{background:none;border:0;color:var(--muted);font:inherit;font-weight:600;padding:7px 12px;border-radius:8px;cursor:pointer}
+nav button.on{background:var(--soft);color:var(--accent)}
+main{max-width:1040px;margin:0 auto;padding:26px 20px 60px}
+h1{font-size:1.7rem;margin:0;color:var(--accent)}h2{font-size:1.05rem;margin:0 0 12px}
+.sub{color:var(--muted);margin:2px 0 22px}
+.row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.sp{margin-left:auto}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:14px 0}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px}
+.stat b{display:block;font-size:1.9rem;font-weight:800;line-height:1.1;color:var(--accent)}.stat span,.muted{color:var(--muted);font-size:.88rem}
+.meter{height:8px;background:var(--line);border-radius:9px;overflow:hidden;margin:8px 0 4px}.meter i{display:block;height:100%;background:var(--accent);transition:width .35s}
+button.b,.btn{font:inherit;font-weight:700;background:var(--accent);color:var(--on);border:0;border-radius:8px;padding:9px 16px;cursor:pointer}
+button.b.alt{background:var(--soft);color:var(--accent)}button.b.red{background:none;color:var(--bad);border:1px solid var(--line)}
+input,select,textarea{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:9px 11px;max-width:100%}
+textarea{width:100%;min-height:150px;resize:vertical}
+label{display:grid;gap:4px;font-size:.82rem;color:var(--muted);margin-bottom:12px}label input{width:100%}
+.subj{cursor:pointer;transition:border-color .15s}.subj:hover{border-color:var(--accent)}.subj h3{margin:0 0 2px}
+.timer{font-size:2.6rem;font-weight:800;font-variant-numeric:tabular-nums}
+.unit{display:flex;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+.unit input{width:18px;height:18px;accent-color:var(--accent);padding:0}.unit span{flex:1}.unit.done span{text-decoration:line-through;color:var(--muted)}
+.x{background:none;border:0;color:var(--muted);font-size:1.2rem;cursor:pointer}.x:hover{color:var(--bad)}
+.chart{display:flex;align-items:flex-end;gap:10px;height:160px;margin-top:10px}
+.chart div{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%;font-size:.75rem;color:var(--muted)}
+.chart i{width:100%;background:var(--accent);border-radius:6px 6px 0 0;min-height:2px}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:10px}
+.cal .h{font-size:.75rem;color:var(--muted);text-align:center}
+.cal button{aspect-ratio:1;min-height:44px;background:var(--bg);border:1px solid var(--line);border-radius:8px;color:var(--ink);font:inherit;cursor:pointer;position:relative}
+.cal button.e{visibility:hidden}.cal button.t{border-color:var(--accent)}.cal button.sel{background:var(--soft)}
+.cal button u{position:absolute;bottom:5px;left:50%;width:6px;height:6px;margin-left:-3px;border-radius:50%;background:var(--accent)}.cal button u.ex{background:var(--bad)}
+.fab{position:fixed;right:18px;bottom:calc(18px + env(safe-area-inset-bottom,0px));z-index:20;background:var(--accent);color:var(--on);border:0;border-radius:99px;padding:13px 20px;font:inherit;font-weight:800;cursor:pointer;box-shadow:0 10px 24px -8px rgba(21,128,61,.6);transition:transform .28s cubic-bezier(.2,.8,.3,1)}
+.fab:hover{transform:translateY(-4px)}
+.chat{position:fixed;right:18px;bottom:calc(78px + env(safe-area-inset-bottom,0px));z-index:20;width:min(390px,calc(100vw - 36px));height:min(540px,calc(100vh - 140px));background:var(--surface);border:1px solid var(--line);border-radius:16px;display:flex;flex-direction:column;box-shadow:0 24px 48px -16px rgba(0,0,0,.3);overflow:hidden}
+.chat[hidden]{display:none}
+.ch{display:flex;align-items:center;gap:8px;padding:12px 14px;border-bottom:1px solid var(--line);background:var(--soft)}
+.ch b{margin-right:auto}.ch select{max-width:130px;padding:5px 8px}
+.cm{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px}
+.m{padding:9px 12px;border-radius:12px;max-width:88%;white-space:pre-wrap;overflow-wrap:anywhere;font-size:.93rem}
+.m.ai{background:var(--soft);align-self:flex-start}.m.me{background:var(--accent);color:var(--on);align-self:flex-end}
+.ln{display:flex;gap:6px;flex-wrap:wrap;align-self:flex-start;font-size:.8rem}
+.ln a{color:var(--accent);border:1px solid var(--line);border-radius:99px;padding:3px 10px;text-decoration:none;font-weight:600}.ln a:hover{background:var(--soft)}
+.cf{display:flex;gap:8px;padding:10px;border-top:1px solid var(--line)}.cf input{flex:1}
+.tog{display:flex;justify-content:space-between;align-items:center;padding:8px 0}
+dialog{border:1px solid var(--line);border-radius:14px;background:var(--surface);color:var(--ink);width:min(380px,92vw);padding:22px}
+dialog::backdrop{background:rgba(0,0,0,.45)}
+.back{background:none;border:0;color:var(--accent);font:inherit;font-weight:700;cursor:pointer;padding:0;margin-bottom:12px}
+.link{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--line);gap:10px;overflow-wrap:anywhere}
+.card,button.b,nav button,.cal button,.unit,.link,.logo svg{transition:transform .28s cubic-bezier(.2,.8,.3,1),box-shadow .28s,border-color .2s,background .2s}
+.card:hover{transform:translateY(-6px);box-shadow:0 16px 28px -12px rgba(21,128,61,.4);border-color:var(--accent)}
+button.b:hover{transform:translateY(-3px);box-shadow:0 10px 18px -8px rgba(21,128,61,.55)}
+button.b:active{transform:translateY(0);box-shadow:none}
+nav button:hover{transform:translateY(-2px);background:var(--soft);color:var(--accent)}
+.cal button:not(.e):hover{transform:translateY(-3px) scale(1.06);box-shadow:0 8px 14px -8px rgba(21,128,61,.5);border-color:var(--accent)}
+.unit:hover,.link:hover{transform:translateY(-2px)}
+.logo:hover svg{transform:translateY(-3px) rotate(-6deg)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}.card:hover,button.b:hover,nav button:hover,.cal button:hover,.unit:hover,.link:hover,.logo:hover svg{transform:none}}
+.yrs{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 10px}
+.yrs a{color:var(--accent);border:1px solid var(--line);border-radius:99px;padding:3px 12px;text-decoration:none;font-weight:700;font-size:.85rem;transition:transform .2s,background .2s}
+.yrs a:hover{background:var(--soft);transform:translateY(-2px)}
+a.btn{text-decoration:none;display:inline-block}
+.qo{display:block;width:100%;text-align:left;font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin:8px 0;cursor:pointer;transition:transform .2s,border-color .2s,background .2s}
+.qo:hover:not(:disabled){transform:translateY(-2px);border-color:var(--accent);background:var(--soft)}
+.qo:disabled{cursor:default}.qo.ok{border-color:#22c55e;background:rgba(34,197,94,.22)}.qo.no{border-color:var(--bad);background:rgba(217,83,79,.16)}
+@media (max-width:720px){.g2{grid-template-columns:1fr}.sp{margin-left:0}}
+</style>
+</head>
+<body>
+<header><div class="bar"><div class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 5.5C4.5 4 8 4 12 6.5c4-2.5 7.5-2.5 10-1v13c-2.5-1.5-6-1.5-10 1-4-2.5-7.5-2.5-10-1z"/><path d="M12 6.5v13"/></svg>Smart Study</div><nav id="nav"></nav></div></header>
+<main id="app"></main>
+
+<dialog id="dSub"><form method="dialog" id="fSub"><h2>Add new subject</h2>
+<label>Subject name<input id="sn" required maxlength="40"></label>
+<label>Exam date (optional)<input id="sd" type="date"></label>
+<div class="row"><button class="b alt" type="button" data-close>Cancel</button><button class="b sp" type="submit">Save subject</button></div></form></dialog>
+<dialog id="dUnit"><form method="dialog" id="fUnit"><h2>Add unit or chapter</h2>
+<label>Unit name<input id="un" required maxlength="60"></label>
+<label>Due date (optional)<input id="ud" type="date"></label>
+<div class="row"><button class="b alt" type="button" data-close>Cancel</button><button class="b sp" type="submit">Save unit</button></div></form></dialog>
+
+<script>
+(function(){
+var KEY='smart-study-v1',S,view='dash',cur=null,cm=new Date(),selDay=null,rsub=null,tmr=null,left=1800;
+cm.setDate(1);
+function iso(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function off(n){var d=new Date();d.setDate(d.getDate()+n);return iso(d)}
+var today=iso(new Date());
+function load(){try{return JSON.parse(localStorage.getItem(KEY))}catch(e){return null}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+S=load()||{name:'',goal:4,theme:'',log:{},subjects:[
+ {id:1,name:'Physics',exam:off(12),notes:'',links:[],units:[{id:11,name:'Kinematics',due:off(2),done:true},{id:12,name:'Thermodynamics',due:off(5),done:false},{id:13,name:'Optics',due:off(8),done:false}]},
+ {id:2,name:'Mathematics',exam:off(20),notes:'',links:[],units:[{id:21,name:'Calculus',due:off(3),done:false},{id:22,name:'Linear algebra',due:off(9),done:false}]}]};
+function theme(){if(S.theme)document.documentElement.setAttribute('data-theme',S.theme);else document.documentElement.removeAttribute('data-theme')}
+function $(id){return document.getElementById(id)}
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function pct(s){return s.units.length?Math.round(s.units.filter(function(u){return u.done}).length/s.units.length*100):0}
+function fd(d){var p=d.split('-');return new Date(p[0],p[1]-1,p[2]).toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric'})}
+function days(d){var p=d.split('-');return Math.ceil((new Date(p[0],p[1]-1,p[2])-new Date(new Date().toDateString()))/864e5)}
+function bar(p){return '<div class="meter"><i style="width:'+p+'%"></i></div>'}
+function sub(id){return S.subjects.filter(function(s){return s.id==id})[0]}
+
+var tabs=[['dash','Dashboard'],['ana','Analytics'],['cal','Calendar'],['quiz','Quiz'],['res','Resources'],['set','Settings']];
+function render(){
+  $('nav').innerHTML=tabs.map(function(t){return '<button data-v="'+t[0]+'" class="'+(view===t[0]||(view==='sub'&&t[0]==='dash')?'on':'')+'">'+t[1]+'</button>'}).join('');
+  var f={dash:vDash,sub:vSub,ana:vAna,cal:vCal,quiz:vQuiz,res:vRes,set:vSet}[view];$('app').innerHTML=f();
+  if(view==='dash')tick();
+}
+function vDash(){
+  var tu=0,du=0,nx=null;
+  S.subjects.forEach(function(s){tu+=s.units.length;du+=s.units.filter(function(u){return u.done}).length;if(s.exam&&s.exam>=today&&(!nx||s.exam<nx))nx=s.exam});
+  var all=tu?Math.round(du/tu*100):0,h=S.log[today]||0,gp=Math.min(100,Math.round(h/S.goal*100));
+  return '<div class="row"><div><h1>Welcome back'+(S.name?', '+esc(S.name):'')+'!</h1><p class="sub">Here is your study overview.</p></div><button class="b sp" data-act="addSub">Add subject</button></div>'+
+  '<div class="grid"><div class="card stat"><span>Total subjects</span><b>'+S.subjects.length+'</b></div><div class="card stat"><span>Completed units</span><b>'+du+'</b></div><div class="card stat"><span>Next exam in</span><b>'+(nx?days(nx)+' d':'-')+'</b></div></div>'+
+  '<div class="card" style="margin-top:14px"><div class="row"><b>Overall syllabus completion</b><b class="sp">'+all+'%</b></div>'+bar(all)+'</div>'+
+  '<div class="g2"><div class="card"><h2>Daily study tracker</h2><div class="row"><label>Daily goal (hours)<input id="goal" type="number" min="1" max="16" value="'+S.goal+'" style="width:110px"></label><label>Log study time (hours)<input id="lg" type="number" min="0.25" step="0.25" value="1" style="width:110px"></label><button class="b" data-act="log">Add</button></div>'+bar(gp)+'<span class="muted">Today: '+h+' / '+S.goal+' hours ('+gp+'%)</span></div>'+
+  '<div class="card"><h2>Focus session</h2><div class="timer" id="tm"></div><div class="row"><label style="margin:0">Minutes<input id="mins" type="number" min="1" max="180" value="30" style="width:90px"></label><button class="b" data-act="start" id="st">'+(tmr?'Pause':'Start')+'</button><button class="b alt" data-act="reset">Reset</button></div></div></div>'+
+  '<h2>Your subjects</h2>'+(S.subjects.length?'<div class="grid">'+S.subjects.map(function(s){var p=pct(s);return '<div class="card subj" tabindex="0" role="button" data-open="'+s.id+'"><h3>'+esc(s.name)+'</h3><span class="muted">'+(s.exam?'Exam: '+fd(s.exam):'No exam date')+'</span>'+bar(p)+'<span class="muted">'+p+'% complete</span></div>'}).join('')+'</div>':'<div class="card"><b>No subjects added yet</b><p class="muted">Click “Add subject” to start organizing your syllabus.</p></div>');
+}
+function vSub(){
+  var s=sub(cur);if(!s){view='dash';return vDash()}var p=pct(s);
+  return '<button class="back" data-v="dash">← Back</button><div class="row"><div><h1>'+esc(s.name)+'</h1><label style="margin:6px 0 0">Exam date<input type="date" id="ex" value="'+(s.exam||'')+'"></label></div><div class="sp row"><button class="b" data-act="addUnit">Add unit</button><button class="b red" data-act="delSub">Delete</button></div></div>'+
+  '<div class="card" style="margin:16px 0"><div class="row"><b>Subject completion</b><b class="sp">'+p+'%</b></div>'+bar(p)+'</div><div class="card"><h2>Syllabus units</h2>'+
+  (s.units.length?s.units.map(function(u){return '<div class="unit'+(u.done?' done':'')+'"><input type="checkbox" data-u="'+u.id+'"'+(u.done?' checked':'')+' aria-label="Mark done"><span>'+esc(u.name)+(u.due?' <small class="muted">· due '+fd(u.due)+'</small>':'')+'</span><button class="x" data-du="'+u.id+'" aria-label="Delete unit">×</button></div>'}).join(''):'<p class="muted">No units added yet. Add units to track your detailed progress.</p>')+'</div>';
+}
+function vAna(){
+  var tot=0,k;for(k in S.log)tot+=S.log[k];
+  var best='-',bv=0;for(k in S.log)if(S.log[k]>bv){bv=S.log[k];best=fd(k)}
+  var ds=[],mx=1;for(var i=6;i>=0;i--){var d=off(-i),v=S.log[d]||0;mx=Math.max(mx,v);ds.push([d,v])}
+  return '<h1>Analytics &amp; insights</h1><p class="sub">Track your study habits and progress over time.</p><div class="grid"><div class="card stat"><span>Total study hours</span><b>'+tot+' h</b></div><div class="card stat"><span>Most active day</span><b style="font-size:1.3rem">'+best+'</b></div></div>'+
+  '<div class="g2"><div class="card"><h2>Weekly study hours</h2><div class="chart">'+ds.map(function(x){return '<div>'+x[1]+'<i style="height:'+Math.round(x[1]/mx*85)+'%"></i>'+new Date(x[0].replace(/-/g,'/')).toLocaleDateString(undefined,{weekday:'short'})+'</div>'}).join('')+'</div></div>'+
+  '<div class="card"><h2>Syllabus completion</h2>'+(S.subjects.map(function(s){return '<div class="row"><span>'+esc(s.name)+'</span><b class="sp">'+pct(s)+'%</b></div>'+bar(pct(s))}).join('')||'<p class="muted">No subjects yet.</p>')+'</div></div>';
+}
+function events(){var m={};S.subjects.forEach(function(s){if(s.exam)(m[s.exam]=m[s.exam]||[]).push({t:s.name+' exam',ex:1,id:s.id});s.units.forEach(function(u){if(u.due&&!u.done)(m[u.due]=m[u.due]||[]).push({t:u.name+' ('+s.name+')',id:s.id})})});return m}
+function vCal(){
+  var y=cm.getFullYear(),mo=cm.getMonth(),n=new Date(y,mo+1,0).getDate(),st=cm.getDay(),ev=events(),c='';
+  ['S','M','T','W','T','F','S'].forEach(function(d){c+='<div class="h">'+d+'</div>'});
+  for(var i=0;i<st;i++)c+='<button class="e" tabindex="-1"></button>';
+  for(var d=1;d<=n;d++){var k=y+'-'+String(mo+1).padStart(2,'0')+'-'+String(d).padStart(2,'0'),e=ev[k]||[];
+    c+='<button data-day="'+k+'" class="'+(k===today?'t ':'')+(k===selDay?'sel':'')+'">'+d+(e.length?'<u class="'+(e.some(function(x){return x.ex})?'ex':'')+'"></u>':'')+'</button>'}
+  var list=selDay?(ev[selDay]||[]):[];
+  return '<h1>Study calendar</h1><p class="sub">Upcoming exams (red) and unit deadlines.</p><div class="card"><div class="row"><button class="b alt" data-m="-1">‹</button><b class="sp" style="margin:0 auto">'+cm.toLocaleDateString(undefined,{month:'long',year:'numeric'})+'</b><button class="b alt" data-m="1">›</button></div><div class="cal">'+c+'</div></div>'+
+  (selDay?'<div class="card" style="margin-top:14px"><h2>'+fd(selDay)+'</h2>'+(list.length?list.map(function(x){return '<div class="link"><span>'+(x.ex?'📌 ':'')+esc(x.t)+'</span><button class="back" style="margin:0" data-open="'+x.id+'">View subject</button></div>'}).join(''):'<p class="muted">Nothing scheduled.</p>')+'</div>':'');
+}
+function kukPapers(){
+  var yrs=[2026,2025,2024,2023,2022,2021,2020,2019];
+  return '<div class="card" style="margin-bottom:14px"><h2>KUK previous year question papers (B.Tech CSE)</h2>'+
+  '<p class="muted">Choose a subject and a year. Each year button opens a web search for that paper. Always confirm the paper on the official KUK website and check that it matches your scheme and semester.</p>'+
+  '<div class="row" style="margin-bottom:12px"><a class="btn" href="https://kuk.ac.in" target="_blank" rel="noopener">Official KUK website</a>'+
+  '<a class="btn" style="background:var(--soft);color:var(--accent)" href="https://topperworld.in/?p=1958" target="_blank" rel="noopener">Topperworld: DSA papers 2014-2022 (unofficial)</a></div>'+
+  QB.map(function(x){var n=x[0].replace(/\s*\(.*\)/,'');
+    return '<div class="link" style="display:block"><b>'+esc(n)+'</b><div class="yrs">'+yrs.map(function(y){
+      return '<a href="https://www.google.com/search?q='+encodeURIComponent('Kurukshetra University KUK B.Tech CSE '+n+' question paper '+y)+'" target="_blank" rel="noopener" aria-label="'+esc(n)+' '+y+'">'+y+'</a>'}).join('')+'</div></div>'}).join('')+'</div>';
+}
+function vRes(){
+  var s=rsub?sub(rsub):null;
+  return '<h1>Resources &amp; notes</h1><p class="sub">Question papers, notes and saved links for each subject.</p>'+kukPapers()+'<label>Subject<select id="rs"><option value="">Select a subject…</option>'+S.subjects.map(function(x){return '<option value="'+x.id+'"'+(x.id==rsub?' selected':'')+'>'+esc(x.name)+'</option>'}).join('')+'</select></label>'+
+  (s?'<div class="g2"><div class="card"><h2>Quick notes</h2><textarea id="nt">'+esc(s.notes)+'</textarea><p><button class="b" data-act="saveNote">Save notes</button></p></div><div class="card"><h2>Saved links</h2><div class="row" style="margin-bottom:10px"><input id="lk" placeholder="https://…" style="flex:1"><button class="b" data-act="addLink">Add</button></div>'+(s.links.map(function(l,i){var ok=/^https?:\/\//i.test(l);return '<div class="link">'+(ok?'<a href="'+esc(l)+'" target="_blank" rel="noopener">'+esc(l)+'</a>':'<span>'+esc(l)+'</span>')+'<button class="x" data-dl="'+i+'" aria-label="Remove link">×</button></div>'}).join('')||'<p class="muted">No links saved yet.</p>')+'</div></div>':'<p class="muted">Select a subject to view notes and links.</p>');
+}
+function vSet(){
+  var dark=S.theme==='dark';
+  return '<h1>Settings</h1><p class="sub">Manage your profile and preferences.</p><div class="card"><h2>Appearance</h2><div class="tog"><div><b>Dark mode</b><br><span class="muted">Switch to a dark color theme</span></div><input type="checkbox" id="dk" style="width:22px;height:22px;accent-color:var(--accent)"'+(dark?' checked':'')+'></div></div>'+
+  '<div class="card" style="margin-top:14px"><h2>Profile</h2><label>Your name<input id="pn" value="'+esc(S.name)+'" maxlength="30"></label><label>Default daily goal (hours)<input id="pg" type="number" min="1" max="16" value="'+S.goal+'"></label><button class="b" data-act="saveProf">Save profile</button></div>'+
+  '<div class="card" style="margin-top:14px"><h2>Danger zone</h2><p class="muted">Data is stored only in this browser. Resetting removes all subjects and logs.</p><button class="b red" data-act="wipe">Reset all data</button></div>';
+}
+
+/* quiz */
+var QB=[
+['Data Structures',[
+['Which data structure follows the LIFO order?',['Queue','Stack','Tree','Graph'],1],
+['What is the time complexity of searching in a balanced binary search tree?',['O(1)','O(n)','O(log n)','O(n²)'],2],
+['Which data structure is used to implement breadth-first search?',['Stack','Queue','Heap','Hash table'],1],
+['What is the time to insert a node at the head of a singly linked list?',['O(1)','O(n)','O(log n)','O(n log n)'],0],
+['A complete binary tree with n nodes has a height of about?',['n','n/2','log₂ n','n²'],2]]],
+['Algorithms',[
+['What is the worst-case time complexity of quicksort?',['O(n log n)','O(n)','O(n²)','O(log n)'],2],
+['Which technique does merge sort use?',['Greedy','Divide and conquer','Dynamic programming','Backtracking'],1],
+['Dijkstra’s algorithm finds what?',['A minimum spanning tree','Shortest paths from one source','A topological order','Maximum flow'],1],
+['Binary search requires the array to be?',['Sorted','Unsorted','Of even length','Of distinct values only'],0],
+['Which problem is solved with dynamic programming?',['Fractional knapsack','0/1 knapsack','Huffman coding','Prim’s algorithm'],1]]],
+['DBMS',[
+['Which key uniquely identifies each row of a table?',['Foreign key','Primary key','Unique view','Check clause'],1],
+['Which normal form removes partial dependency?',['1NF','2NF','3NF','BCNF'],1],
+['Which SQL command removes all rows but keeps the table structure?',['DROP','TRUNCATE','ALTER','RENAME'],1],
+['In ACID, what does the letter I stand for?',['Integrity','Isolation','Indexing','Inheritance'],1],
+['Which join returns all rows from the left table?',['INNER JOIN','LEFT JOIN','CROSS JOIN','EQUI JOIN'],1]]],
+['Operating Systems',[
+['Which scheduling algorithm can starve long processes?',['FCFS','Round Robin','Shortest Job First','None of these'],2],
+['Which condition is necessary for a deadlock?',['Preemption','Circular wait','Spooling','Paging'],1],
+['Virtual memory is commonly implemented using?',['Caching only','Paging','Spooling','Polling'],1],
+['Which of these is a page replacement algorithm?',['LRU','SJF','SCAN','Banker’s'],0],
+['What is a semaphore used for?',['Synchronization','Compilation','Routing','Encryption'],0]]],
+['Computer Networks',[
+['Which OSI layer is responsible for routing?',['Data link','Network','Transport','Session'],1],
+['What is the default port of HTTP?',['21','25','80','443'],2],
+['Which protocol is connection-oriented?',['UDP','TCP','IP','ICMP'],1],
+['How long is an IPv4 address?',['16 bits','32 bits','64 bits','128 bits'],1],
+['What does DNS do?',['Maps IP to MAC','Maps domain names to IP addresses','Maps ports to services','Maps packets to frames'],1]]],
+['OOP (Java/C++)',[
+['Which feature lets a class reuse another class’s members?',['Encapsulation','Inheritance','Abstraction','Recursion'],1],
+['Method overloading is an example of?',['Compile-time polymorphism','Runtime polymorphism','Inheritance','Data hiding'],0],
+['In Java, which keyword stops a class from being inherited?',['static','final','abstract','private'],1],
+['A class that cannot be instantiated and may contain abstract methods is?',['Final class','Abstract class','Static class','Inner class'],1],
+['Bundling data and methods together in one unit is called?',['Polymorphism','Encapsulation','Recursion','Overriding'],1]]],
+['Computer Organization',[
+['Which is the fastest memory?',['Hard disk','RAM','Cache','Registers'],3],
+['Which CPU component performs arithmetic and logic operations?',['Control unit','ALU','MMU','Cache'],1],
+['What does pipelining mainly improve?',['Instruction throughput','Memory size','Disk speed','Network speed'],0],
+['In which addressing mode is the operand part of the instruction?',['Direct','Immediate','Indirect','Register'],1],
+['What does the program counter hold?',['The last result','The address of the next instruction','The stack top','The interrupt flag'],1]]],
+['Theory of Computation',[
+['Which machine recognizes regular languages?',['Pushdown automaton','Finite automaton','Turing machine','Linear bounded automaton'],1],
+['Which of these languages is context-free?',['aⁿbⁿ','aⁿbⁿcⁿ','ww','aⁿ² (n squared)'],0],
+['The halting problem is?',['Decidable','Undecidable','Regular','Context-free'],1],
+['How many transitions does a DFA have per state for each input symbol?',['None','Exactly one','At least two','Any number'],1],
+['The regular expression (a|b)* generates?',['Only strings of a','All strings of a and b, including the empty string','Only strings of b','Only strings ending in a'],1]]],
+['Discrete Mathematics',[
+['How many edges does a complete graph with n vertices have?',['n','n(n−1)/2','n²','2n'],1],
+['When is the implication p → q false?',['p false, q true','p true, q false','Both true','Both false'],1],
+['How many subsets does a set with 4 elements have?',['8','16','4','32'],1],
+['In how many ways can 4 distinct objects be arranged in a row?',['4','12','24','16'],2],
+['A relation that is reflexive, symmetric and transitive is?',['A partial order','An equivalence relation','A function','A lattice'],1]]],
+['Software Engineering',[
+['Which model is also called the linear sequential model?',['Agile','Waterfall','Spiral','Prototype'],1],
+['Testing a single module in isolation is called?',['Integration testing','Unit testing','System testing','Acceptance testing'],1],
+['What does UML stand for?',['Unified Modeling Language','Universal Markup Language','Unified Machine Logic','User Model Layer'],0],
+['Which of these is a non-functional requirement?',['A login feature','Response time under 2 seconds','Add to cart','Search for items'],1],
+['In Scrum, a fixed iteration is called a?',['Sprint','Phase','Baseline','Gate'],0]]]
+];
+var qz=null;
+function qbest(n){return S.best&&S.best[n]!=null?S.best[n]+'%':'-'}
+function shuf(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1)),t=a[i];a[i]=a[j];a[j]=t}return a}
+function startQ(idx){
+  var pool=[],title;
+  if(idx<0){title='Mixed test';QB.forEach(function(s){s[1].forEach(function(r){pool.push({q:r[0],o:r[1],a:r[2]})})});pool=shuf(pool).slice(0,10)}
+  else{title=QB[idx][0];pool=shuf(QB[idx][1].map(function(r){return{q:r[0],o:r[1],a:r[2]}}))}
+  qz={idx:idx,title:title,qs:pool,i:0,pick:null,score:0,wrong:[],done:false};
+}
+function vQuiz(){
+  if(!qz){
+    return '<h1>Quiz &amp; tests</h1><p class="sub">Pick a B.Tech CSE subject and test yourself. Every question has instant feedback and your best score is saved.</p><div class="grid">'+
+    '<div class="card subj" tabindex="0" role="button" data-q="start:-1"><h3>Mixed test</h3><span class="muted">10 random questions from all subjects</span><br><span class="muted">Best: '+qbest('Mixed test')+'</span></div>'+
+    QB.map(function(s,i){return '<div class="card subj" tabindex="0" role="button" data-q="start:'+i+'"><h3>'+esc(s[0])+'</h3><span class="muted">'+s[1].length+' questions</span><br><span class="muted">Best: '+qbest(s[0])+'</span></div>'}).join('')+'</div>';
+  }
+  var n=qz.qs.length;
+  if(qz.done){
+    var p=Math.round(qz.score/n*100);
+    return '<button class="back" data-q="quit">← All subjects</button><h1>Your result</h1><div class="card stat" style="margin:16px 0"><span>'+esc(qz.title)+'</span><b>'+qz.score+' / '+n+' ('+p+'%)</b><span>'+(p>=80?'Excellent work!':p>=50?'Good effort. Review the missed ones below.':'Keep practising. Review the answers below.')+'</span></div>'+
+    '<div class="row"><button class="b" data-q="again">Try again</button><button class="b alt" data-q="quit">Choose another subject</button></div>'+
+    (qz.wrong.length?'<div class="card" style="margin-top:14px"><h2>Questions to review</h2>'+qz.wrong.map(function(w){return '<div class="link"><span>'+esc(w.q)+'<br><small class="muted">Correct answer: '+esc(w.o[w.a])+'</small></span></div>'}).join('')+'</div>':'<p class="sub" style="margin-top:14px">You answered everything correctly.</p>');
+  }
+  var x=qz.qs[qz.i],a=qz.pick,ans=a!==null;
+  return '<button class="back" data-q="quit">← All subjects</button><div class="row"><b>'+esc(qz.title)+'</b><span class="sp muted">Question '+(qz.i+1)+' of '+n+'</span></div>'+bar(Math.round(qz.i/n*100))+
+  '<div class="card" style="margin-top:14px"><h2>'+esc(x.q)+'</h2>'+x.o.map(function(t,k){var c='qo';if(ans){if(k===x.a)c+=' ok';else if(k===a)c+=' no'}return '<button class="'+c+'" data-q="ans:'+k+'"'+(ans?' disabled':'')+'>'+String.fromCharCode(65+k)+'. '+esc(t)+'</button>'}).join('')+
+  (ans?'<p><b>'+(a===x.a?'Correct!':'Not quite. The correct answer is '+String.fromCharCode(65+x.a)+'.')+'</b></p><button class="b" data-q="next">'+(qz.i+1<n?'Next question':'See result')+'</button>':'')+'</div>';
+}
+document.addEventListener('click',function(e){
+  var t=e.target.closest('[data-q]');if(!t)return;var a=t.dataset.q;
+  if(a.indexOf('start:')===0)startQ(+a.slice(6));
+  else if(a==='quit')qz=null;
+  else if(a==='again')startQ(qz.idx);
+  else if(a.indexOf('ans:')===0){
+    if(!qz||qz.pick!==null)return;
+    qz.pick=+a.slice(4);var x=qz.qs[qz.i];
+    if(qz.pick===x.a)qz.score++;else qz.wrong.push(x);
+  }else if(a==='next'){
+    qz.i++;qz.pick=null;
+    if(qz.i>=qz.qs.length){
+      qz.done=true;var p=Math.round(qz.score/qz.qs.length*100);
+      S.best=S.best||{};if(S.best[qz.title]==null||p>S.best[qz.title])S.best[qz.title]=p;save();
+    }
+  }
+  render();
+});
+document.addEventListener('keydown',function(e){if((e.key==='Enter'||e.key===' ')&&e.target.dataset&&e.target.dataset.q&&e.target.tagName==='DIV'){e.preventDefault();e.target.click()}});
+
+/* timer */
+function tick(){var m=Math.floor(left/60),s=left%60,e=$('tm');if(e)e.textContent=String(m).padStart(2,'0')+':'+String(s).padStart(2,'0')}
+function stopT(){clearInterval(tmr);tmr=null}
+function act(a){
+  var s;
+  if(a==='addSub'){$('fSub').reset();$('dSub').showModal()}
+  else if(a==='addUnit'){$('fUnit').reset();$('dUnit').showModal()}
+  else if(a==='log'){var v=parseFloat($('lg').value);if(v>0){S.log[today]=Math.round(((S.log[today]||0)+v)*100)/100;save();render()}}
+  else if(a==='start'){
+    if(tmr){stopT();render();return}
+    if(left<=0||left===1800&&false)left=(parseInt($('mins').value)||30)*60;
+    tmr=setInterval(function(){left--;tick();if(left<=0){stopT();var h=(parseInt($('mins')&&$('mins').value)||30)/60;S.log[today]=Math.round(((S.log[today]||0)+h)*100)/100;save();left=1800;render()}},1000);render()}
+  else if(a==='reset'){stopT();left=(parseInt($('mins').value)||30)*60;render()}
+  else if(a==='delSub'){if(confirm('Delete this subject and its units?')){S.subjects=S.subjects.filter(function(x){return x.id!=cur});save();view='dash';render()}}
+  else if(a==='saveNote'){s=sub(rsub);s.notes=$('nt').value;save();$('nt').style.borderColor='var(--accent)'}
+  else if(a==='addLink'){s=sub(rsub);var l=$('lk').value.trim();if(l){s.links.push(l);save();render()}}
+  else if(a==='saveProf'){S.name=$('pn').value.trim();S.goal=Math.max(1,parseInt($('pg').value)||4);save();render()}
+  else if(a==='wipe'){if(confirm('Reset all data?')){S={name:'',goal:4,theme:S.theme,log:{},subjects:[]};save();render()}}
+}
+document.addEventListener('click',function(e){
+  var t=e.target.closest('[data-v],[data-act],[data-open],[data-day],[data-m],[data-du],[data-dl],[data-close]');if(!t)return;
+  if(t.dataset.close!==undefined){t.closest('dialog').close();return}
+  if(t.dataset.v){view=t.dataset.v;render();return}
+  if(t.dataset.act){act(t.dataset.act);return}
+  if(t.dataset.open){cur=+t.dataset.open;view='sub';render();return}
+  if(t.dataset.day){selDay=t.dataset.day;render();return}
+  if(t.dataset.m){cm.setMonth(cm.getMonth()+ +t.dataset.m);render();return}
+  if(t.dataset.du){var s=sub(cur);s.units=s.units.filter(function(u){return u.id!=t.dataset.du});save();render();return}
+  if(t.dataset.dl){var r=sub(rsub);r.links.splice(+t.dataset.dl,1);save();render()}
+});
+document.addEventListener('keydown',function(e){if((e.key==='Enter'||e.key===' ')&&e.target.dataset&&e.target.dataset.open&&e.target.tagName==='DIV'){e.preventDefault();e.target.click()}});
+document.addEventListener('change',function(e){
+  var t=e.target;
+  if(t.dataset.u){sub(cur).units.forEach(function(u){if(u.id==t.dataset.u)u.done=t.checked});save();render()}
+  else if(t.id==='ex'){sub(cur).exam=t.value;save();render()}
+  else if(t.id==='goal'){S.goal=Math.max(1,parseInt(t.value)||4);save();render()}
+  else if(t.id==='rs'){rsub=t.value?+t.value:null;render()}
+  else if(t.id==='dk'){S.theme=t.checked?'dark':'light';theme();save();render()}
+});
+$('fSub').addEventListener('submit',function(){S.subjects.push({id:Date.now(),name:$('sn').value.trim(),exam:$('sd').value,notes:'',links:[],units:[]});save();render()});
+$('fUnit').addEventListener('submit',function(){sub(cur).units.push({id:Date.now(),name:$('un').value.trim(),due:$('ud').value,done:false});save();render()});
+theme();render();
+})();
+</script>
+
+<button class="fab" id="fab" aria-label="Open AI study helper" aria-expanded="false">💬 Ask AI</button>
+<section class="chat" id="chat" hidden aria-label="AI study helper">
+  <div class="ch"><b>AI study helper</b><select id="csub" aria-label="Subject"></select><button class="x" id="cx" aria-label="Close chat">×</button></div>
+  <div class="cm" id="cm" aria-live="polite"></div>
+  <form class="cf" id="cf"><input id="ci" placeholder="Ask any question…" maxlength="500" autocomplete="off" required><button class="b" type="submit">Send</button></form>
+</section>
+
+<script>
+(function(){
+var g=function(id){return document.getElementById(id)},hist=[],busy=false,init=false;
+function subjects(){try{return JSON.parse(localStorage.getItem('smart-study-v1')).subjects.map(function(s){return s.name})}catch(e){return[]}}
+function fillSel(){var s=g('csub'),v=s.value;s.innerHTML='';var o=document.createElement('option');o.value='';o.textContent='Any subject';s.appendChild(o);
+  subjects().forEach(function(n){var p=document.createElement('option');p.value=n;p.textContent=n;s.appendChild(p)});s.value=v}
+function add(cls,text){var d=document.createElement('div');d.className='m '+cls;d.textContent=text;g('cm').appendChild(d);g('cm').scrollTop=g('cm').scrollHeight;return d}
+function links(list){
+  var d=document.createElement('div');d.className='ln';
+  list.forEach(function(l){var a=document.createElement('a');a.href=l[1];a.target='_blank';a.rel='noopener';a.textContent=l[0];d.appendChild(a)});
+  g('cm').appendChild(d);g('cm').scrollTop=g('cm').scrollHeight}
+function toggle(open){
+  g('chat').hidden=!open;g('fab').setAttribute('aria-expanded',open);
+  if(open){fillSel();if(!init){init=true;add('ai','Hi! Ask me anything about your subjects: explain a topic, solve a problem, or check an answer. I can’t browse the web live, so each answer has a Google link to look it up.')}g('ci').focus()}
+}
+g('fab').addEventListener('click',function(){toggle(g('chat').hidden)});
+g('cx').addEventListener('click',function(){toggle(false);g('fab').focus()});
+g('cf').addEventListener('submit',async function(e){
+  e.preventDefault();var q=g('ci').value.trim();if(!q||busy)return;
+  g('ci').value='';add('me',q);busy=true;
+  var el=add('ai','Thinking…');
+  hist.push({role:'user',content:q});
+  try{
+    var res=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:hist,subject:g('csub').value})});
+    var data=await res.json();
+    if(!res.ok)throw new Error(data.error||'Request failed');
+    el.textContent=data.text;hist.push({role:'assistant',content:data.text});
+    var l=data.sources.map(function(x){return [x.title.slice(0,40),x.url]});
+    links(l.length?l:[['Search Google','https://www.google.com/search?q='+encodeURIComponent(q)]]);
+  }catch(err){
+    hist.pop();el.textContent=err.message||'Something went wrong. Try again.';
+    links([['Search Google','https://www.google.com/search?q='+encodeURIComponent(q)]]);
+  }finally{busy=false}
+});
+})();
+</script>
+</body>
+</html>
