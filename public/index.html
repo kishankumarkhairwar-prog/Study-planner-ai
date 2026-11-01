@@ -4,9 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Smart Study: Your Planner</title>
-<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;800&family=Poppins:wght@400;500;600&family=Lora:wght@600&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#fff;--surface:#fff;--ink:#12261b;--muted:#5d7567;--line:#d6eadc;--accent:#15803d;--soft:#dcf5e4;--on:#fff;--bad:#d9534f;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+:root{--page:#e3f3ea;--bg:#f5fbf7;--surface:#fff;--ink:#10261a;--muted:#5a7466;--line:#dcebe2;--accent:#16874a;--soft:#e2f5ea;--on:#fff;--bad:#d9534f;--side1:#27a862;--side2:#117040;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 @media not all{:root:not([data-theme="light"]){--bg:#0b1510;--surface:#121f18;--ink:#e8f5ec;--muted:#8fb09b;--line:#223a2c;--accent:#4ade80;--soft:#1b3326;--on:#052e16;color-scheme:dark}}
 :root[data-theme="dark"]{--bg:#0b1510;--surface:#121f18;--ink:#e8f5ec;--muted:#8fb09b;--line:#223a2c;--accent:#4ade80;--soft:#1b3326;--on:#052e16;color-scheme:dark}
 *{box-sizing:border-box}html,body{margin:0}
@@ -80,11 +80,165 @@ a.btn{text-decoration:none;display:inline-block}
 .qo:hover:not(:disabled){transform:translateY(-2px);border-color:var(--accent);background:var(--soft)}
 .qo:disabled{cursor:default}.qo.ok{border-color:#22c55e;background:rgba(34,197,94,.22)}.qo.no{border-color:var(--bad);background:rgba(217,83,79,.16)}
 @media (max-width:720px){.g2{grid-template-columns:1fr}.sp{margin-left:0}}
+/* planner redesign */
+html{scroll-behavior:smooth}
+body{background:var(--page)}
+.shell{display:grid;grid-template-columns:250px minmax(0,1fr);gap:24px;max-width:1380px;margin:18px auto;padding:18px;background:var(--bg);border-radius:32px;box-shadow:0 30px 60px -30px rgba(16,80,45,.35)}
+.side{position:sticky;top:18px;align-self:start;height:calc(100vh - 72px);min-height:560px;background:linear-gradient(175deg,var(--side1),var(--side2));border-radius:26px;padding:26px 16px 20px;display:flex;flex-direction:column;color:#fff;box-shadow:0 24px 40px -24px rgba(10,80,40,.7)}
+.brand{display:flex;flex-direction:column;align-items:center;gap:12px;margin-bottom:28px;font-weight:800;font-size:1.05rem}
+.mark{width:78px;height:78px;border-radius:24px;border:0;background:linear-gradient(150deg,#74e3a6,#1c9a57);display:grid;place-items:center;cursor:pointer;padding:0;box-shadow:0 14px 26px -12px rgba(0,0,0,.5),inset 0 2px 0 rgba(255,255,255,.45);transition:transform .3s cubic-bezier(.2,.8,.3,1)}
+.mark:hover{transform:translateY(-3px) rotate(-3deg)}.mark svg{width:46px;height:46px}
+.mark.flip svg{animation:pg .7s cubic-bezier(.4,0,.2,1)}
+@keyframes pg{to{transform:rotateY(360deg)}}
+.side nav{flex-direction:column;flex-wrap:nowrap;gap:6px}
+.side nav button{display:flex;align-items:center;gap:12px;width:100%;text-align:left;color:rgba(255,255,255,.85);padding:12px 14px;border-radius:14px;font-size:.95rem}
+.side nav button svg{width:20px;height:20px;flex:none}
+.side nav button:hover{background:rgba(255,255,255,.16);color:#fff;transform:translateX(4px)}
+.side nav button.on,.side nav button.on:hover{background:#fff;color:var(--accent);box-shadow:0 10px 20px -12px rgba(0,0,0,.45);transform:none}
+.out{margin-top:auto;display:flex;align-items:center;gap:12px;width:100%;background:rgba(255,255,255,.14);border:0;color:#fff;font:inherit;font-weight:700;padding:12px 14px;border-radius:14px;cursor:pointer;transition:background .2s,transform .2s}
+.out:hover{background:rgba(255,255,255,.26);transform:translateY(-2px)}.out svg{width:20px;height:20px}
+.content{min-width:0}
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:6px 4px 20px}
+.top h2{margin:0;font-size:1.3rem}.top small{color:var(--muted)}
+.who{display:flex;align-items:center;gap:10px;background:var(--surface);padding:6px 16px 6px 6px;border-radius:999px;box-shadow:0 8px 22px -14px rgba(16,80,45,.45)}
+.av{width:38px;height:38px;border-radius:50%;background:linear-gradient(150deg,#74e3a6,#16874a);color:#fff;display:grid;place-items:center;font-weight:800;text-transform:uppercase}
+.who b{display:block;line-height:1.1;font-size:.9rem}.who small{color:var(--muted);font-size:.75rem}
+.content main{max-width:none;margin:0;padding:0 0 60px}
+.content main h1{color:var(--ink);font-size:1.6rem}
+#app.in{animation:vin .5s cubic-bezier(.2,.8,.3,1)}
+@keyframes vin{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+.card{border-radius:20px;box-shadow:0 12px 30px -20px rgba(16,80,45,.35)}
+button.b,.btn,a.btn,.fab{border-radius:999px}
+input,select,textarea{border-radius:12px}
+.banner{display:grid;grid-template-columns:1.1fr .9fr;align-items:center;gap:10px;border-radius:26px;padding:28px 36px;margin-bottom:8px;background:linear-gradient(120deg,#117040,#2fb46d);color:#fff;position:relative;overflow:hidden;box-shadow:0 24px 40px -24px rgba(17,112,64,.8)}
+.banner::before{content:"";position:absolute;width:260px;height:260px;border-radius:50%;background:rgba(255,255,255,.08);right:-60px;top:-110px}
+.bt{position:relative}.bd{display:inline-block;font-size:.8rem;background:rgba(255,255,255,.18);padding:4px 12px;border-radius:999px}
+.content .banner h1{color:#fff;font-size:2rem;margin:12px 0 6px}
+.banner p{margin:0 0 16px;color:rgba(255,255,255,.88)}
+.banner button.b.light{background:#fff;color:var(--accent)}
+.bimg{position:relative;background:radial-gradient(circle,rgba(255,255,255,.3),transparent 66%)}.bimg svg{width:100%;max-height:210px;display:block}
+.sec{margin:22px 0 12px}
+.dgrid{display:grid;grid-template-columns:minmax(0,1fr) 310px;gap:22px;align-items:start}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:16px}
+.card.stat{text-align:center;padding:22px 16px}
+.stat .si{width:58px;height:58px;border-radius:18px;background:var(--soft);color:var(--accent);display:grid;place-items:center;margin:0 auto 10px}.si svg{width:28px;height:28px}
+.card.stat b{color:var(--ink)}
+.subj{background:linear-gradient(160deg,var(--surface),var(--soft))}
+.vbtn{display:inline-block;margin-top:12px;background:var(--accent);color:#fff;padding:7px 22px;border-radius:999px;font-weight:700;font-size:.85rem}
+.up{display:flex;gap:12px;align-items:flex-start;padding:12px;border-radius:14px;cursor:pointer;transition:background .2s,transform .2s}
+.up:hover{background:var(--soft);transform:translateX(3px)}
+.up .dot{width:10px;height:10px;border-radius:50%;background:var(--accent);margin-top:7px;flex:none}.up .dot.ex{background:var(--bad)}
+.up b{display:block;font-size:.92rem}
+button.b,.side nav button,.subj,.qo,.up,.out,.lp-go{position:relative;overflow:hidden}.fab{overflow:hidden}
+.rp{position:absolute;border-radius:50%;background:currentColor;opacity:.25;pointer-events:none;transform:scale(0);animation:rp .65s ease-out forwards}
+@keyframes rp{to{transform:scale(1);opacity:0}}
+button.b:active,.side nav button:active,.subj:active,.out:active,.up:active{transform:scale(.97)}
+:root[data-theme="dark"]{--page:#07100b;--side1:#176b3d;--side2:#0d4528}
+@media (max-width:1100px){.dgrid{grid-template-columns:1fr}}
+@media (max-width:980px){.shell{grid-template-columns:1fr;margin:0;border-radius:0;padding:12px}.side{position:static;height:auto;min-height:0;flex-direction:row;flex-wrap:wrap;align-items:center;gap:10px;padding:12px;border-radius:20px}.brand{flex-direction:row;margin:0}.mark{width:48px;height:48px;border-radius:15px}.mark svg{width:30px;height:30px}.side nav{flex-direction:row;overflow-x:auto;order:3;width:100%}.side nav button{width:auto;white-space:nowrap}.out{margin:0 0 0 auto;width:auto}.banner{grid-template-columns:1fr}.bimg{display:none}.grid3{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:reduce){#app.in,.mark.flip svg,.rp{animation:none!important}html{scroll-behavior:auto}}
+/* login split screen */
+#lp{position:fixed;inset:0;z-index:100;overflow:auto;background:#e3f3ea;padding:18px;font-family:Poppins,Manrope,system-ui,sans-serif;color:#10261a;line-height:1.4}
+#lp *{box-sizing:border-box}#lp [hidden]{display:none!important}
+.lp-card{min-height:100%;display:grid;grid-template-columns:1fr 1fr;border-radius:28px;overflow:hidden;background:#fff;box-shadow:0 30px 60px -30px rgba(16,80,45,.45)}
+.lp-left{padding:40px 64px 36px;display:flex;flex-direction:column;background:#fff}
+.lp-brand{display:flex;align-items:center;gap:10px;font-weight:600;font-size:1.05rem}
+.lp-brand i{width:38px;height:38px;border-radius:12px;background:linear-gradient(150deg,#74e3a6,#16874a);display:grid;place-items:center;box-shadow:0 8px 16px -8px rgba(0,0,0,.4)}.lp-brand i svg{width:24px;height:24px}
+.lp-fw{margin:auto 0;width:100%;max-width:390px;padding:30px 0}
+#lp h1{font-size:2.5rem;font-weight:600;margin:0 0 6px;color:#10261a;letter-spacing:-.5px}
+.lp-sub{margin:0 0 30px;color:#5a7466;font-size:.92rem}
+.lp-f{position:relative;margin-bottom:20px}
+#lp .lp-f input{width:100%;border:0;border-bottom:1.5px solid #cfe3d6;border-radius:0;background:transparent;font:400 .95rem Poppins,sans-serif;color:#10261a;padding:12px 40px 12px 2px;outline:none;transition:border-color .25s}
+#lp .lp-f input:focus{border-bottom-color:#16874a}#lp .lp-f input::placeholder{color:#8aa394}
+.lp-eye{position:absolute;right:0;top:8px;width:34px;height:34px;border:0;background:none;color:#7c9686;cursor:pointer;border-radius:50%;display:grid;place-items:center;transition:color .2s,background .2s}
+.lp-eye:hover,.lp-eye.on{color:#16874a;background:#e2f5ea}.lp-eye svg{width:20px;height:20px}
+.lp-forgot{display:inline-block;font-size:.85rem;color:#16874a;text-decoration:none;margin-bottom:26px}.lp-forgot:hover{text-decoration:underline}
+#lp button.lp-go{width:100%;border:0;background:#16874a;color:#fff;font:500 1rem Poppins,sans-serif;padding:15px 24px;border-radius:999px;cursor:pointer;box-shadow:0 14px 24px -14px rgba(22,135,74,.9);transition:transform .25s,background .2s,box-shadow .25s}
+#lp button.lp-go:hover{background:#0f6f3b;transform:translateY(-2px)}
+#lp-msg{min-height:22px;font-size:.85rem;margin:14px 0 0;line-height:1.45;color:#5a7466}#lp-msg.err{color:#d23c3c}#lp-msg.ok{color:#0f6f3b;font-weight:500}
+.lp-bottom{display:flex;align-items:center;gap:14px;flex-wrap:wrap;font-size:.88rem;color:#5a7466}
+#lp button.lp-alt{border:0;background:#e2f5ea;color:#0f6f3b;font:500 .88rem Poppins,sans-serif;padding:9px 22px;border-radius:999px;cursor:pointer;transition:background .2s,transform .2s}
+#lp button.lp-alt:hover{background:#cdeedb;transform:translateY(-2px)}
+.lp-right{position:relative;background:#16874a;color:#fff;padding:44px 52px 36px;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden}
+.lp-b1,.lp-b2{position:absolute;border-radius:50%;background:rgba(255,255,255,.09)}.lp-b1{width:340px;height:340px;right:-110px;top:-120px}.lp-b2{width:260px;height:260px;left:-90px;bottom:-90px}
+.lp-hero{position:relative}
+#lp h2{margin:0;font-size:clamp(2.2rem,4.2vw,3.5rem);line-height:1.08;font-weight:300;letter-spacing:-.5px}#lp h2 span{display:block;font-weight:600}
+.lp-hero p{margin:14px 0 0;font-size:.95rem;color:rgba(255,255,255,.88)}
+.lp-art{position:relative;display:flex;justify-content:center;background:radial-gradient(circle,rgba(255,255,255,.28),transparent 66%)}.lp-art svg{width:100%;max-width:500px;height:auto;display:block}
+@media(max-width:860px){#lp{padding:0}.lp-card{grid-template-columns:1fr;border-radius:0}.lp-right{order:-1;padding:28px 24px 8px}.lp-art svg{max-width:240px}.lp-left{padding:28px 24px}.lp-fw{padding:24px 0}}
 </style>
 </head>
 <body>
-<header><div class="bar"><div class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 5.5C4.5 4 8 4 12 6.5c4-2.5 7.5-2.5 10-1v13c-2.5-1.5-6-1.5-10 1-4-2.5-7.5-2.5-10-1z"/><path d="M12 6.5v13"/></svg>Smart Study</div><nav id="nav"></nav></div></header>
-<main id="app"></main>
+<template id="bk-art"><svg viewBox="0 0 560 440"> <defs> <linearGradient id="bgTop" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4fcf86"/><stop offset="1" stop-color="#1f9150"/></linearGradient> <linearGradient id="bwTop" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#dfe9e2"/></linearGradient> <linearGradient id="bpg" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff6d8"/><stop offset="1" stop-color="#f1deaa"/></linearGradient> <linearGradient id="bleaf" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#b7ee52"/><stop offset="1" stop-color="#3fae3a"/></linearGradient> </defs> <ellipse cx="300" cy="372" rx="230" ry="26" fill="#2c7a4b" opacity=".12"/> <!-- pencil holder --> <g> <polygon points="105,170 160,196 160,262 105,236" fill="#e6efe9"/> <polygon points="160,196 215,170 215,236 160,262" fill="#cfdcd4"/> <polygon points="105,170 160,144 215,170 160,196" fill="#fff"/> <ellipse cx="160" cy="170" rx="26" ry="12" fill="#d3e0d8"/> <polygon points="150,168 168,164 190,96 176,92" fill="#5ed28a"/> <polygon points="176,92 190,96 186,78" fill="#f2deb0"/><polygon points="183,84 187,86 186,78" fill="#3b3b3b"/> </g> <!-- plant --> <g> <path d="M452 112 Q500 70 530 78 Q520 120 470 124Z" fill="url(#bleaf)"/> <path d="M486 108 Q480 60 520 38 Q540 80 510 112Z" fill="url(#bleaf)"/> <path d="M470 124 Q440 96 430 76 Q470 66 486 112Z" fill="#8fdc4a"/> <path d="M430 124 Q430 190 478 190 Q526 190 526 124Z" fill="#fff"/> <ellipse cx="478" cy="124" rx="48" ry="12" fill="#e3ece6"/> </g> <!-- green book (bottom) --> <g stroke-linejoin="round"> <polygon points="70,300 180,352 420,258 420,236 310,190 70,276" fill="#1c7c45" stroke="#1c7c45" stroke-width="8"/> <polygon points="70,276 180,328 180,352 70,300" fill="url(#bpg)"/> <polygon points="76,284 180,334 180,340 76,290" fill="#e8d49c" opacity=".7"/> <polygon points="180,328 420,234 420,258 180,352" fill="#23a05a"/> <polygon points="70,276 180,328 420,234 310,184" fill="url(#bgTop)" stroke="#2fb868" stroke-width="6"/> <polygon points="160,322 150,352 168,340 178,330" fill="#ff5a5f"/> </g> <!-- white book (top) --> <g stroke-linejoin="round"> <polygon points="105,250 210,300 450,206 345,156" fill="#c9d8cf" stroke="#c9d8cf" stroke-width="8" transform="translate(0,8)"/> <polygon points="95,246 205,298 205,324 95,272" fill="url(#bpg)" stroke="#f1deaa" stroke-width="3"/> <polygon points="102,256 205,306 205,312 102,262" fill="#e8d49c" opacity=".7"/> <polygon points="205,298 445,204 445,230 205,324" fill="#e9f1ec"/> <polygon points="95,246 205,298 445,204 335,152" fill="url(#bwTop)" stroke="#fff" stroke-width="6"/> <polygon points="108,252 200,296 200,300 108,256" fill="#2fb868" opacity=".35"/> <polygon points="196,296 188,330 206,318 214,306" fill="#2fb868"/> </g> <!-- sticky note --> <polygon points="190,368 270,380 290,420 210,420" fill="#ffe94d" transform="translate(-20,-10)"/> <polygon points="250,368 290,380 280,396" fill="#f2c92a" transform="translate(-20,-10)"/> <!-- pencils --> <g> <rect x="388" y="338" width="110" height="26" rx="6" fill="#6b9bf2" transform="rotate(-12 388 338)"/> <polygon points="388,338 372,352 384,362" fill="#f2deb0" transform="rotate(-12 388 338)"/> <rect x="452" y="312" width="64" height="28" rx="14" fill="#9b6bd6" transform="rotate(-8 452 312)"/> <rect x="436" y="312" width="22" height="28" rx="6" fill="#f2deb0" transform="rotate(-8 452 312)"/> </g> </svg></template>
+<div class="shell"><aside class="side"><div class="brand"><button class="mark" id="mark" type="button" aria-label="Smart Study logo"><svg viewBox="0 0 48 48" aria-hidden="true"><path d="M7 40c6.500-1 12.500 0 17 3 4.500-3 10.500-4 17-3" fill="none" stroke="#c4efd7" stroke-width="2.500" stroke-linecap="round"/><path d="M24 13c-4.500-3.200-11-4.200-17-3v27c6-1.200 12.500-.2 17 3 4.500-3.200 11-4.200 17-3V10c-6-1.200-12.500-.200-17 3z" fill="#fff"/><path d="M24 13v27" stroke="#16874a" stroke-width="1.600"/><path d="M11 18c3-.500 6-.200 9 1.300M11 23c3-.500 6-.200 9 1.300M11 28c3-.500 6-.200 9 1.300M37 18c-3-.500-6-.200-9 1.300M37 23c-3-.500-6-.200-9 1.300M37 28c-3-.500-6-.200-9 1.300" fill="none" stroke="#16874a" stroke-width="1.600" stroke-linecap="round"/><path d="M32 10.500V21l2.500-1.800L37 21V11z" fill="#ffd84a"/></svg></button><span>Smart Study</span></div><nav id="nav"></nav><button class="out" id="lpo" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/></svg>Log out</button></aside><div class="content"><div class="top"><div><h2 id="ttl">Dashboard</h2><small id="tdate"></small></div><div class="who"><div class="av" id="av">S</div><div><b id="wn">Student</b><small>Signed in</small></div></div></div><main id="app"></main></div></div>
+
+<div id="lp"><div class="lp-card">
+<section class="lp-left">
+<div class="lp-brand"><i><svg viewBox="0 0 48 48" aria-hidden="true"><path d="M7 40c6.500-1 12.500 0 17 3 4.500-3 10.500-4 17-3" fill="none" stroke="#c4efd7" stroke-width="2.500" stroke-linecap="round"/><path d="M24 13c-4.500-3.200-11-4.200-17-3v27c6-1.200 12.500-.2 17 3 4.500-3.200 11-4.200 17-3V10c-6-1.200-12.500-.200-17 3z" fill="#fff"/><path d="M24 13v27" stroke="#16874a" stroke-width="1.600"/><path d="M11 18c3-.500 6-.200 9 1.300M11 23c3-.500 6-.200 9 1.300M11 28c3-.500 6-.200 9 1.300M37 18c-3-.500-6-.200-9 1.300M37 23c-3-.500-6-.200-9 1.300M37 28c-3-.500-6-.200-9 1.300" fill="none" stroke="#16874a" stroke-width="1.600" stroke-linecap="round"/><path d="M32 10.500V21l2.500-1.800L37 21V11z" fill="#ffd84a"/></svg></i>Smart Study</div>
+<form id="lp-form" class="lp-fw" autocomplete="on" novalidate>
+<h1 id="lp-h">Login</h1><p class="lp-sub" id="lp-s">Enter your account details</p>
+<div class="lp-f"><input id="lp-user" placeholder="Username" autocomplete="username" maxlength="30" aria-label="Username"></div>
+<div class="lp-f"><input id="lp-pass" type="password" placeholder="Password" autocomplete="current-password" aria-label="Password"><button type="button" class="lp-eye" id="lp-eye" aria-label="Show password"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+<div class="lp-f" id="lp-cw" hidden><input id="lp-pass2" type="password" placeholder="Confirm password" autocomplete="new-password" aria-label="Confirm password"></div>
+<a href="#" id="lp-forgot" class="lp-forgot">Forgot password?</a>
+<button class="lp-go" type="submit" id="lp-go">Login</button>
+<p id="lp-msg" role="status"></p>
+</form>
+<div class="lp-bottom"><span id="lp-q">Don't have an account?</span><button type="button" class="lp-alt" id="lp-sw">Sign up</button></div>
+</section>
+<section class="lp-right"><i class="lp-b1"></i><i class="lp-b2"></i>
+<div class="lp-hero"><h2><span>Welcome to</span> Smart Study</h2><p>Login to access your account</p></div>
+<div class="lp-art" aria-hidden="true"><svg viewBox="0 0 560 440"> <defs> <linearGradient id="lgTop" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4fcf86"/><stop offset="1" stop-color="#1f9150"/></linearGradient> <linearGradient id="lwTop" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#dfe9e2"/></linearGradient> <linearGradient id="lpg" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff6d8"/><stop offset="1" stop-color="#f1deaa"/></linearGradient> <linearGradient id="lleaf" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#b7ee52"/><stop offset="1" stop-color="#3fae3a"/></linearGradient> </defs> <ellipse cx="300" cy="372" rx="230" ry="26" fill="#2c7a4b" opacity=".12"/> <!-- pencil holder --> <g> <polygon points="105,170 160,196 160,262 105,236" fill="#e6efe9"/> <polygon points="160,196 215,170 215,236 160,262" fill="#cfdcd4"/> <polygon points="105,170 160,144 215,170 160,196" fill="#fff"/> <ellipse cx="160" cy="170" rx="26" ry="12" fill="#d3e0d8"/> <polygon points="150,168 168,164 190,96 176,92" fill="#5ed28a"/> <polygon points="176,92 190,96 186,78" fill="#f2deb0"/><polygon points="183,84 187,86 186,78" fill="#3b3b3b"/> </g> <!-- plant --> <g> <path d="M452 112 Q500 70 530 78 Q520 120 470 124Z" fill="url(#lleaf)"/> <path d="M486 108 Q480 60 520 38 Q540 80 510 112Z" fill="url(#lleaf)"/> <path d="M470 124 Q440 96 430 76 Q470 66 486 112Z" fill="#8fdc4a"/> <path d="M430 124 Q430 190 478 190 Q526 190 526 124Z" fill="#fff"/> <ellipse cx="478" cy="124" rx="48" ry="12" fill="#e3ece6"/> </g> <!-- green book (bottom) --> <g stroke-linejoin="round"> <polygon points="70,300 180,352 420,258 420,236 310,190 70,276" fill="#1c7c45" stroke="#1c7c45" stroke-width="8"/> <polygon points="70,276 180,328 180,352 70,300" fill="url(#lpg)"/> <polygon points="76,284 180,334 180,340 76,290" fill="#e8d49c" opacity=".7"/> <polygon points="180,328 420,234 420,258 180,352" fill="#23a05a"/> <polygon points="70,276 180,328 420,234 310,184" fill="url(#lgTop)" stroke="#2fb868" stroke-width="6"/> <polygon points="160,322 150,352 168,340 178,330" fill="#ff5a5f"/> </g> <!-- white book (top) --> <g stroke-linejoin="round"> <polygon points="105,250 210,300 450,206 345,156" fill="#c9d8cf" stroke="#c9d8cf" stroke-width="8" transform="translate(0,8)"/> <polygon points="95,246 205,298 205,324 95,272" fill="url(#lpg)" stroke="#f1deaa" stroke-width="3"/> <polygon points="102,256 205,306 205,312 102,262" fill="#e8d49c" opacity=".7"/> <polygon points="205,298 445,204 445,230 205,324" fill="#e9f1ec"/> <polygon points="95,246 205,298 445,204 335,152" fill="url(#lwTop)" stroke="#fff" stroke-width="6"/> <polygon points="108,252 200,296 200,300 108,256" fill="#2fb868" opacity=".35"/> <polygon points="196,296 188,330 206,318 214,306" fill="#2fb868"/> </g> <!-- sticky note --> <polygon points="190,368 270,380 290,420 210,420" fill="#ffe94d" transform="translate(-20,-10)"/> <polygon points="250,368 290,380 280,396" fill="#f2c92a" transform="translate(-20,-10)"/> <!-- pencils --> <g> <rect x="388" y="338" width="110" height="26" rx="6" fill="#6b9bf2" transform="rotate(-12 388 338)"/> <polygon points="388,338 372,352 384,362" fill="#f2deb0" transform="rotate(-12 388 338)"/> <rect x="452" y="312" width="64" height="28" rx="14" fill="#9b6bd6" transform="rotate(-8 452 312)"/> <rect x="436" y="312" width="22" height="28" rx="6" fill="#f2deb0" transform="rotate(-8 452 312)"/> </g> </svg></div>
+</section></div></div>
+<script>
+(function(){
+var $=function(i){return document.getElementById(i)},msg=$('lp-msg'),mode='login';
+function rd(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}}
+function wr(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}
+function say(t,c){msg.textContent=t;msg.className=c||''}
+async function hash(s){try{var b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));return Array.from(new Uint8Array(b)).map(function(x){return x.toString(16).padStart(2,'0')}).join('')}catch(e){return btoa(unescape(encodeURIComponent(s)))}}
+var ses=rd('sp_session');
+if(ses&&ses.user){$('lp').hidden=true;var wn=$('wn'),av=$('av'),td=$('tdate');if(wn)wn.textContent=ses.user;if(av)av.textContent=ses.user.charAt(0);if(td)td.textContent=new Date().toLocaleDateString(undefined,{weekday:'long',day:'numeric',month:'long'})}
+else{document.documentElement.style.overflow='hidden'}
+$('lpo').addEventListener('click',function(){try{localStorage.removeItem('sp_session')}catch(e){}location.reload()});
+function setMode(m){
+  mode=m;var s=m==='signup';
+  $('lp-h').textContent=s?'Sign up':'Login';
+  $('lp-s').textContent=s?'Create your account to start planning':'Enter your account details';
+  $('lp-cw').hidden=!s;$('lp-forgot').hidden=s;
+  $('lp-go').textContent=s?'Create account':'Login';
+  $('lp-q').textContent=s?'Already have an account?':"Don't have an account?";
+  $('lp-sw').textContent=s?'Login':'Sign up';
+  $('lp-pass').autocomplete=s?'new-password':'current-password';
+  say('');
+}
+$('lp-sw').addEventListener('click',function(){setMode(mode==='login'?'signup':'login')});
+$('lp-eye').addEventListener('click',function(){
+  var show=$('lp-pass').type==='password';
+  $('lp-pass').type=show?'text':'password';$('lp-pass2').type=show?'text':'password';
+  $('lp-eye').setAttribute('aria-label',show?'Hide password':'Show password');$('lp-eye').classList.toggle('on',show);
+});
+$('lp-forgot').addEventListener('click',function(e){e.preventDefault();say('Password reset is not available yet because accounts are stored only in this browser. Sign up with a new username to continue.','')});
+$('lp-form').addEventListener('submit',async function(e){
+  e.preventDefault();
+  var name=$('lp-user').value.trim(),key=name.toLowerCase().replace(/[^a-z0-9_-]/g,'_'),pw=$('lp-pass').value;
+  if(!name||pw.length<4){say('Enter a username and a password of at least 4 characters.','err');return}
+  var users=rd('sp_users')||{},h=await hash(pw),now=new Date().toISOString(),note;
+  if(mode==='signup'){
+    if($('lp-pass2').value!==pw){say("Passwords don't match. Check both fields.",'err');return}
+    if(users[key]){say('That username is already taken. Try another or log in.','err');return}
+    users[key]={username:name,hash:h,created:now,lastLogin:now,logins:1};note='Account created. Welcome, '+name+'!';
+  }else{
+    if(!users[key]){say('No account found for that username. Sign up first.','err');return}
+    if(users[key].hash!==h){say('Wrong password. Try again.','err');return}
+    users[key].lastLogin=now;users[key].logins=(users[key].logins||0)+1;note='Welcome back, '+users[key].username+'!';
+  }
+  if(!(wr('sp_users',users)&&wr('sp_session',{user:users[key].username,key:key,at:now}))){say('This browser blocked saving your login. Allow site data and try again.','err');return}
+  say(note,'ok');$('lp-go').disabled=true;$('lp-go').textContent='Opening your planner...';setTimeout(function(){location.reload()},600);
+});
+})();
+</script>
+
 
 <dialog id="dSub"><form method="dialog" id="fSub"><h2>Add new subject</h2>
 <label>Subject name<input id="sn" required maxlength="40"></label>
@@ -97,14 +251,14 @@ a.btn{text-decoration:none;display:inline-block}
 
 <script>
 (function(){
-var KEY='smart-study-v1',S,view='dash',cur=null,cm=new Date(),selDay=null,rsub=null,tmr=null,left=1800;
+var SES=(function(){try{return JSON.parse(localStorage.getItem('sp_session'))}catch(e){return null}})(),KEY='smart-study-v1'+(SES&&SES.key?':'+SES.key:''),S,view='dash',cur=null,cm=new Date(),selDay=null,rsub=null,tmr=null,left=1800;
 cm.setDate(1);
 function iso(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
 function off(n){var d=new Date();d.setDate(d.getDate()+n);return iso(d)}
 var today=iso(new Date());
 function load(){try{return JSON.parse(localStorage.getItem(KEY))}catch(e){return null}}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
-S=load()||{name:'',goal:4,theme:'',log:{},subjects:[
+S=load()||{name:(SES&&SES.user)||'',goal:4,theme:'',log:{},subjects:[
  {id:1,name:'Physics',exam:off(12),notes:'',links:[],units:[{id:11,name:'Kinematics',due:off(2),done:true},{id:12,name:'Thermodynamics',due:off(5),done:false},{id:13,name:'Optics',due:off(8),done:false}]},
  {id:2,name:'Mathematics',exam:off(20),notes:'',links:[],units:[{id:21,name:'Calculus',due:off(3),done:false},{id:22,name:'Linear algebra',due:off(9),done:false}]}]};
 function theme(){if(S.theme)document.documentElement.setAttribute('data-theme',S.theme);else document.documentElement.removeAttribute('data-theme')}
@@ -117,21 +271,33 @@ function bar(p){return '<div class="meter"><i style="width:'+p+'%"></i></div>'}
 function sub(id){return S.subjects.filter(function(s){return s.id==id})[0]}
 
 var tabs=[['dash','Dashboard'],['ana','Analytics'],['cal','Calendar'],['quiz','Quiz'],['res','Resources'],['set','Settings']];
+function sv(p){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+p+'</svg>'}
+var ICN={dash:sv('<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>'),ana:sv('<path d="M5 20V10M12 20V4M19 20v-7"/>'),cal:sv('<rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/>'),quiz:sv('<circle cx="12" cy="12" r="9"/><path d="M9.500 9.500a2.500 2.500 0 1 1 3.500 2.300c-.7.400-1 .900-1 1.700M12 17h.01"/>'),res:sv('<path d="M4 6a2 2 0 0 1 2-2h5l2 2h5a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/>'),set:sv('<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.900 4.900L7 7M17 17l2.100 2.100M4.900 19.100L7 17M17 7l2.100-2.100"/>')};
+var ic={book:sv('<path d="M4 5.500C6.500 4.500 9.500 5 12 7c2.500-2 5.500-2.500 8-1.500v12c-2.500-1-5.500-.5-8 1.500-2.500-2-5.500-2.500-8-1.500z"/><path d="M12 7v12"/>'),check:sv('<circle cx="12" cy="12" r="9"/><path d="M8 12.500l2.800 2.800L16 9.500"/>'),clock:sv('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>')};
 function render(){
-  $('nav').innerHTML=tabs.map(function(t){return '<button data-v="'+t[0]+'" class="'+(view===t[0]||(view==='sub'&&t[0]==='dash')?'on':'')+'">'+t[1]+'</button>'}).join('');
-  var f={dash:vDash,sub:vSub,ana:vAna,cal:vCal,quiz:vQuiz,res:vRes,set:vSet}[view];$('app').innerHTML=f();
+  $('nav').innerHTML=tabs.map(function(t){return '<button data-v="'+t[0]+'" class="'+(view===t[0]||(view==='sub'&&t[0]==='dash')?'on':'')+'">'+ICN[t[0]]+'<span>'+t[1]+'</span></button>'}).join('');
+  var tl=tabs.filter(function(t){return t[0]===(view==='sub'?'dash':view)})[0];if($('ttl'))$('ttl').textContent=tl?tl[1]:'';
+  var f={dash:vDash,sub:vSub,ana:vAna,cal:vCal,quiz:vQuiz,res:vRes,set:vSet}[view];$('app').innerHTML=f();if(window.__lv!==view){window.__lv=view;var ap=$('app');ap.classList.remove('in');void ap.offsetWidth;ap.classList.add('in')}
   if(view==='dash')tick();
 }
 function vDash(){
-  var tu=0,du=0,nx=null;
-  S.subjects.forEach(function(s){tu+=s.units.length;du+=s.units.filter(function(u){return u.done}).length;if(s.exam&&s.exam>=today&&(!nx||s.exam<nx))nx=s.exam});
+  var tu=0,du=0,nx=null,up=[];
+  S.subjects.forEach(function(s){tu+=s.units.length;du+=s.units.filter(function(u){return u.done}).length;if(s.exam&&s.exam>=today&&(!nx||s.exam<nx))nx=s.exam;
+    if(s.exam&&s.exam>=today)up.push({d:s.exam,t:s.name+' exam',id:s.id,ex:1});
+    s.units.forEach(function(u){if(u.due&&!u.done&&u.due>=today)up.push({d:u.due,t:u.name+' ('+s.name+')',id:s.id})})});
   var all=tu?Math.round(du/tu*100):0,h=S.log[today]||0,gp=Math.min(100,Math.round(h/S.goal*100));
-  return '<div class="row"><div><h1>Welcome back'+(S.name?', '+esc(S.name):'')+'!</h1><p class="sub">Here is your study overview.</p></div><button class="b sp" data-act="addSub">Add subject</button></div>'+
-  '<div class="grid"><div class="card stat"><span>Total subjects</span><b>'+S.subjects.length+'</b></div><div class="card stat"><span>Completed units</span><b>'+du+'</b></div><div class="card stat"><span>Next exam in</span><b>'+(nx?days(nx)+' d':'-')+'</b></div></div>'+
-  '<div class="card" style="margin-top:14px"><div class="row"><b>Overall syllabus completion</b><b class="sp">'+all+'%</b></div>'+bar(all)+'</div>'+
+  up.sort(function(a,b){return a.d<b.d?-1:a.d>b.d?1:0});up=up.slice(0,6);
+  function st(i,v,l){return '<div class="card stat"><div class="si">'+i+'</div><b>'+v+'</b><span>'+l+'</span></div>'}
+  var upl=up.length?up.map(function(x){var n=days(x.d);return '<div class="up" tabindex="0" role="button" data-open="'+x.id+'"><i class="dot'+(x.ex?' ex':'')+'"></i><div><b>'+esc(x.t)+'</b><small class="muted">'+fd(x.d)+' · '+(n===0?'today':n===1?'tomorrow':'in '+n+' days')+'</small></div></div>'}).join(''):'<p class="muted">No upcoming exams or deadlines yet. Add an exam date or a unit due date.</p>';
+  return '<div class="banner"><div class="bt"><span class="bd">'+new Date().toLocaleDateString(undefined,{weekday:'long',day:'numeric',month:'long',year:'numeric'})+'</span><h1>Welcome back'+(S.name?', '+esc(S.name):'')+'!</h1><p>Here is your study overview. Keep your streak going today.</p><button class="b light" data-act="addSub">+ Add subject</button></div><div class="bimg" aria-hidden="true">'+$('bk-art').innerHTML+'</div></div>'+
+  '<div class="dgrid"><div>'+
+  '<h2 class="sec">Overview</h2><div class="grid3">'+st(ic.book,S.subjects.length,'Total subjects')+st(ic.check,du,'Completed units')+st(ic.clock,nx?days(nx)+' d':'-','Next exam in')+'</div>'+
+  '<div class="card"><div class="row"><b>Overall syllabus completion</b><b class="sp">'+all+'%</b></div>'+bar(all)+'</div>'+
   '<div class="g2"><div class="card"><h2>Daily study tracker</h2><div class="row"><label>Daily goal (hours)<input id="goal" type="number" min="1" max="16" value="'+S.goal+'" style="width:110px"></label><label>Log study time (hours)<input id="lg" type="number" min="0.25" step="0.25" value="1" style="width:110px"></label><button class="b" data-act="log">Add</button></div>'+bar(gp)+'<span class="muted">Today: '+h+' / '+S.goal+' hours ('+gp+'%)</span></div>'+
   '<div class="card"><h2>Focus session</h2><div class="timer" id="tm"></div><div class="row"><label style="margin:0">Minutes<input id="mins" type="number" min="1" max="180" value="30" style="width:90px"></label><button class="b" data-act="start" id="st">'+(tmr?'Pause':'Start')+'</button><button class="b alt" data-act="reset">Reset</button></div></div></div>'+
-  '<h2>Your subjects</h2>'+(S.subjects.length?'<div class="grid">'+S.subjects.map(function(s){var p=pct(s);return '<div class="card subj" tabindex="0" role="button" data-open="'+s.id+'"><h3>'+esc(s.name)+'</h3><span class="muted">'+(s.exam?'Exam: '+fd(s.exam):'No exam date')+'</span>'+bar(p)+'<span class="muted">'+p+'% complete</span></div>'}).join('')+'</div>':'<div class="card"><b>No subjects added yet</b><p class="muted">Click “Add subject” to start organizing your syllabus.</p></div>');
+  '<div class="row sec"><h2 style="margin:0">Your subjects</h2><button class="b alt sp" data-act="addSub">+ Add subject</button></div>'+
+  (S.subjects.length?'<div class="grid">'+S.subjects.map(function(s){var p=pct(s);return '<div class="card subj" tabindex="0" role="button" data-open="'+s.id+'"><h3>'+esc(s.name)+'</h3><span class="muted">'+(s.exam?'Exam: '+fd(s.exam):'No exam date')+'</span>'+bar(p)+'<span class="muted">'+p+'% complete</span><br><span class="vbtn">View</span></div>'}).join('')+'</div>':'<div class="card"><b>No subjects added yet</b><p class="muted">Click "Add subject" to start organizing your syllabus.</p></div>')+
+  '</div><aside><div class="card"><h2>Upcoming</h2>'+upl+'</div></aside></div>';
 }
 function vSub(){
   var s=sub(cur);if(!s){view='dash';return vDash()}var p=pct(s);
@@ -331,7 +497,7 @@ document.addEventListener('change',function(e){
 });
 $('fSub').addEventListener('submit',function(){S.subjects.push({id:Date.now(),name:$('sn').value.trim(),exam:$('sd').value,notes:'',links:[],units:[]});save();render()});
 $('fUnit').addEventListener('submit',function(){sub(cur).units.push({id:Date.now(),name:$('un').value.trim(),due:$('ud').value,done:false});save();render()});
-theme();render();
+window.__SS_KEY=KEY;theme();render();
 })();
 </script>
 
@@ -345,7 +511,7 @@ theme();render();
 <script>
 (function(){
 var g=function(id){return document.getElementById(id)},hist=[],busy=false,init=false;
-function subjects(){try{return JSON.parse(localStorage.getItem('smart-study-v1')).subjects.map(function(s){return s.name})}catch(e){return[]}}
+function subjects(){try{return JSON.parse(localStorage.getItem(window.__SS_KEY||'smart-study-v1')).subjects.map(function(s){return s.name})}catch(e){return[]}}
 function fillSel(){var s=g('csub'),v=s.value;s.innerHTML='';var o=document.createElement('option');o.value='';o.textContent='Any subject';s.appendChild(o);
   subjects().forEach(function(n){var p=document.createElement('option');p.value=n;p.textContent=n;s.appendChild(p)});s.value=v}
 function add(cls,text){var d=document.createElement('div');d.className='m '+cls;d.textContent=text;g('cm').appendChild(d);g('cm').scrollTop=g('cm').scrollHeight;return d}
@@ -377,6 +543,10 @@ g('cf').addEventListener('submit',async function(e){
   }finally{busy=false}
 });
 })();
+</script>
+<script>
+document.addEventListener('pointerdown',function(e){var t=e.target.closest('button.b,.side nav button,.subj,.fab,.qo,.up,.out,.lp-go');if(!t||t.disabled)return;var r=t.getBoundingClientRect(),z=Math.max(r.width,r.height)*1.6,d=document.createElement('span');d.className='rp';d.style.cssText='width:'+z+'px;height:'+z+'px;left:'+(e.clientX-r.left-z/2)+'px;top:'+(e.clientY-r.top-z/2)+'px';t.appendChild(d);setTimeout(function(){d.remove()},700)});
+(function(){var m=document.getElementById('mark');m.addEventListener('click',function(){m.classList.remove('flip');void m.offsetWidth;m.classList.add('flip')})})();
 </script>
 </body>
 </html>
