@@ -98,7 +98,9 @@ app.post('/api/chat', async (req, res) => {
   if (clean[0].role !== 'user') clean.shift();
   const system = 'You are a friendly study helper for a college student' +
     (subject ? ' studying ' + String(subject).slice(0, 40) : '') +
-    '. Explain clearly and briefly, step by step when solving problems. Use plain text only, with no markdown symbols.';
+    '. Answer in this exact clean format: line 1 is the direct answer in one short sentence. Then up to 4 short bullet lines, each starting with "- ". ' +
+    'For problems, use numbered steps like "1. ". Add one line starting "Example:" only if it really helps. ' +
+    'Use **bold** only for up to 3 key terms. No headings, no tables, no long paragraphs. Be specific and keep it under 120 words unless the student asks for detail.';
   try {
     const text = await groq([{ role: 'system', content: system }, ...clean], 1200);
     res.json({ text: text || 'Sorry, I could not find an answer. Try rephrasing.', sources: [] });
@@ -350,6 +352,344 @@ app.get('/api/videos', async (req, res) => {
     console.error('YouTube search failed:', e.message);
     res.status(502).json({ error: 'Could not load YouTube results right now. Use the YouTube search link instead.' });
   }
+});
+
+/* ---------------- AI planner: study topics, quiz and flashcards ---------------- */
+// Ask the model for JSON and parse it safely (tries twice).
+async function askJSON(system, user, maxTokens) {
+  for (let i = 0; i < 2; i++) {
+    const out = await groq([
+      { role: 'system', content: system + ' Reply with valid JSON only: no markdown, no code fences, no commentary.' },
+      { role: 'user', content: user }
+    ], maxTokens);
+    const t = String(out || '').replace(/```json|```/gi, '');
+    const a = t.search(/[\[{]/);
+    if (a < 0) continue;
+    const b = t.lastIndexOf(t[a] === '[' ? ']' : '}');
+    if (b > a) { try { return JSON.parse(t.slice(a, b + 1)); } catch (e) {} }
+  }
+  throw new ApiError('The AI reply could not be read. Please try again.', 502);
+}
+const half = n => Math.min(4, Math.max(0.5, Math.round((Number(n) || 1.5) * 2) / 2));
+const str = (v, n) => String(v == null ? '' : v).replace(/\s+/g, ' ').trim().slice(0, n);
+
+// 1) How long does each topic need? (the browser then builds the timetable)
+app.post('/api/plan/topics', async (req, res) => {
+  if (keyBad) return res.status(400).json({ error: KEY_MSG });
+  try {
+    const b = req.body || {};
+    const subs = (Array.isArray(b.subjects) ? b.subjects : []).slice(0, 10).map(s => ({
+      name: str(s.name, 60),
+      daysLeft: Number.isFinite(Number(s.daysLeft)) && s.daysLeft !== null ? Math.round(Number(s.daysLeft)) : null,
+      units: (Array.isArray(s.units) ? s.units : []).slice(0, 40).map(u => str(u, 80)).filter(Boolean),
+      weak: (Array.isArray(s.weak) ? s.weak : []).slice(0, 10).map(u => str(u, 60)).filter(Boolean)
+    })).filter(s => s.name);
+    if (!subs.length) throw new ApiError('Pick at least one subject.', 400);
+    const hours = Math.min(16, Math.max(1, Number(b.hours) || 4));
+    const system = 'You are an expert study planner for B.Tech college students in India.';
+    const user = 'The student can study ' + hours + ' hours per day.\nSubjects (JSON):\n' + JSON.stringify(subs) + '\n\nRules:\n' +
+      '- For each subject, return the topics the student still has to study.\n' +
+      '- If "units" is not empty, return exactly those unit names, spelled the same and in the same order.\n' +
+      '- If "units" is empty, write 6 to 8 sensible syllabus topics for that subject (short names).\n' +
+      '- "hours" is the realistic time for that topic including practice: 0.5 to 4 in steps of 0.5. Harder topics get more.\n' +
+      '- "level": 1 easy, 2 medium, 3 hard.\n' +
+      '- "weak": true when the topic matches or is closely related to something in that subject\'s "weak" list.\n' +
+      '- "tips": exactly 3 short practical study tips for this student (max 18 words each).\n' +
+      'Shape: {"subjects":[{"name":"","topics":[{"name":"","hours":1.5,"level":2,"weak":false}]}],"tips":["","",""]}';
+    const data = await askJSON(system, user, 2600);
+    const got = Array.isArray(data && data.subjects) ? data.subjects : [];
+    const out = subs.map(s => {
+      const m = got.find(x => str(x && x.name, 60).toLowerCase() === s.name.toLowerCase());
+      const topics = (m && Array.isArray(m.topics) ? m.topics : []).slice(0, 14).map(t => ({
+        name: str(t && t.name, 80), hours: half(t && t.hours),
+        level: Math.min(3, Math.max(1, Math.round(Number(t && t.level) || 2))), weak: !!(t && t.weak)
+      })).filter(t => t.name);
+      return { name: s.name, topics };
+    });
+    const tips = (Array.isArray(data && data.tips) ? data.tips : []).slice(0, 3).map(t => str(t, 140)).filter(Boolean);
+    res.json({ subjects: out, tips });
+  } catch (err) { fail(res, err); }
+});
+
+// 2) Quiz from the student's own material
+app.post('/api/quiz/generate', async (req, res) => {
+  if (keyBad) return res.status(400).json({ error: KEY_MSG });
+  try {
+    const b = req.body || {};
+    const text = String(b.text || '').replace(/\s+/g, ' ').trim().slice(0, 9000);
+    if (text.length < 80) throw new ApiError('Add a few more lines of notes first.', 400);
+    const title = str(b.title, 80) || 'Your notes';
+    const count = Math.min(15, Math.max(3, Math.round(Number(b.count) || 8)));
+    const system = 'You write clear multiple-choice exam questions for college students. Use ONLY the material given and do not add facts that are not in it.';
+    const user = 'Material title: ' + title + '\nMaterial:\n' + text + '\n\nWrite ' + count + ' questions, a mix of easy and medium. Each question has exactly 4 options and only one is correct. ' +
+      '"a" is the index (0 to 3) of the correct option. "topic" is a 2 to 4 word topic label from the material. "why" is one short sentence explaining the correct answer.\n' +
+      'Shape: {"questions":[{"q":"","o":["","","",""],"a":0,"topic":"","why":""}]}';
+    const data = await askJSON(system, user, 3200);
+    const arr = Array.isArray(data) ? data : (data && data.questions) || [];
+    const qs = arr.map(x => {
+      const o = Array.isArray(x && x.o) ? x.o.map(v => str(v, 160)) : [];
+      const a = Number(x && x.a);
+      return { q: str(x && x.q, 300), o, a, topic: str(x && x.topic, 40), why: str(x && x.why, 220) };
+    }).filter(x => x.q && x.o.length === 4 && x.o.every(Boolean) && new Set(x.o).size === 4 && Number.isInteger(x.a) && x.a >= 0 && x.a <= 3).slice(0, count);
+    if (qs.length < 3) throw new ApiError('Could not make good questions from that text. Try again with more detailed notes.', 502);
+    res.json({ questions: qs });
+  } catch (err) { fail(res, err); }
+});
+
+// 2b) Quiz for a subject of the student's course (no notes needed)
+app.post('/api/quiz/subject', async (req, res) => {
+  if (keyBad) return res.status(400).json({ error: KEY_MSG });
+  try {
+    const b = req.body || {};
+    const subject = str(b.subject, 80);
+    if (!subject) throw new ApiError('Enter a subject.', 400);
+    const course = str(b.course, 60), spec = str(b.spec, 60), uni = str(b.university, 80);
+    const year = Math.min(6, Math.max(1, Math.round(Number(b.year) || 1)));
+    const count = Math.min(15, Math.max(5, Math.round(Number(b.count) || 10)));
+    const system = 'You write clear, factually correct multiple-choice exam questions for Indian college students, matched to the syllabus level of their course and year.';
+    const user = 'Course: ' + (course || 'not given') + (spec ? ' (' + spec + ')' : '') + ', year ' + year + (uni ? '\nUniversity: ' + uni : '') + '\nSubject: ' + subject + '\n\n' +
+      'Write ' + count + ' questions on the standard syllabus of this subject, a mix of easy and medium. Each question has exactly 4 different options and only one is correct. ' +
+      '"a" is the index (0 to 3) of the correct option. "topic" is a 2 to 4 word topic label. "why" is one short sentence explaining the correct answer.\n' +
+      'Shape: {"questions":[{"q":"","o":["","","",""],"a":0,"topic":"","why":""}]}';
+    const data = await askJSON(system, user, 3200);
+    const arr = Array.isArray(data) ? data : (data && data.questions) || [];
+    const qs = arr.map(x => {
+      const o = Array.isArray(x && x.o) ? x.o.map(v => str(v, 160)) : [];
+      const a = Number(x && x.a);
+      return { q: str(x && x.q, 300), o, a, topic: str(x && x.topic, 40), why: str(x && x.why, 220) };
+    }).filter(x => x.q && x.o.length === 4 && x.o.every(Boolean) && new Set(x.o).size === 4 && Number.isInteger(x.a) && x.a >= 0 && x.a <= 3).slice(0, count);
+    if (qs.length < 3) throw new ApiError('Could not make good questions for that subject. Try again.', 502);
+    res.json({ questions: qs });
+  } catch (err) { fail(res, err); }
+});
+
+/* ---------------- more AI providers (used by the assignment writer) ---------------- */
+const okKey = k => !!k && !/\s/.test(k) && !k.includes('your-key');
+const ENV = n => (process.env[n] || '').trim();
+const PROV = {
+  groq:       { name: 'Groq (free)',                       env: 'GROQ_KEY',       ready: () => !keyBad },
+  gemini:     { name: 'Google Gemini (free tier)',         env: 'GEMINI_KEY',     ready: () => okKey(ENV('GEMINI_KEY')) },
+  openrouter: { name: 'OpenRouter (free models)',          env: 'OPENROUTER_KEY', ready: () => okKey(ENV('OPENROUTER_KEY')) },
+  openai:     { name: 'ChatGPT / OpenAI (paid API)',       env: 'OPENAI_KEY',     ready: () => okKey(ENV('OPENAI_KEY')) },
+  anthropic:  { name: 'Claude / Anthropic (paid API)',     env: 'ANTHROPIC_KEY',  ready: () => okKey(ENV('ANTHROPIC_KEY')) }
+};
+const pickProvider = b => { const p = String((b && b.provider) || 'groq'); return PROV[p] ? p : 'groq'; };
+const providerError = p => PROV[p].ready() ? '' : (p === 'groq' ? KEY_MSG : 'No key found for ' + PROV[p].name + '. Put it after ' + PROV[p].env + '= in the .env file (one line, no spaces), save it, and restart.');
+app.get('/api/providers', (req, res) => res.json(Object.keys(PROV).map(id => ({ id, name: PROV[id].name, env: PROV[id].env, ready: PROV[id].ready() }))));
+
+async function httpAI(name, url, headers, body, pick) {
+  for (let i = 0; i < 2; i++) {
+    let r;
+    try { r = await fetch(url, { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, headers), body: JSON.stringify(body) }); }
+    catch (e) { throw new ApiError('Could not reach ' + name + '. Check your internet connection.', 500); }
+    const raw = await r.text();
+    let d = {}; try { d = JSON.parse(raw); } catch (e) {}
+    if (r.ok) { const t = String(pick(d) || '').trim(); if (t) return t; throw new ApiError(name + ' returned an empty reply. Try again.', 502); }
+    if (r.status === 429 && i < 1) { await sleep(8000); continue; }
+    const m = (d && d.error && (d.error.message || d.error)) || raw.slice(0, 160);
+    console.error(name + ' error', r.status, String(m).slice(0, 200));
+    let msg;
+    if (r.status === 401 || r.status === 403) msg = name + ' rejected the key (' + r.status + '). Check the key in .env and restart.';
+    else if (r.status === 429) msg = name + ' free limit or quota reached. Wait a minute or pick another AI.';
+    else if (r.status === 404) msg = name + ' says the model was not found. Set a valid model name in .env.';
+    else msg = name + ' error (' + r.status + '): ' + String(m).slice(0, 160);
+    throw new ApiError(msg, 502);
+  }
+  throw new ApiError(name + ' limit reached. Try again later.', 502);
+}
+let orPick = '';
+async function openRouterModel() {
+  if (ENV('OPENROUTER_MODEL')) return ENV('OPENROUTER_MODEL');
+  if (orPick) return orPick;
+  try {
+    const r = await fetch('https://openrouter.ai/api/v1/models');
+    const d = await r.json();
+    const ids = ((d && d.data) || []).filter(m => m.pricing && Number(m.pricing.prompt) === 0 && Number(m.pricing.completion) === 0 && /:free$/.test(m.id)).map(m => m.id);
+    for (const w of ['gpt-oss', 'llama', 'qwen', 'gemini', 'deepseek', 'mistral']) { const f = ids.find(x => x.includes(w)); if (f) return (orPick = f); }
+    if (ids[0]) return (orPick = ids[0]);
+  } catch (e) {}
+  throw new ApiError('Could not find a free OpenRouter model. Set OPENROUTER_MODEL in .env.', 502);
+}
+// Ask any provider. messages = [{role:'system'|'user'|'assistant', content}]
+async function ask(provider, messages, maxTokens) {
+  if (provider === 'gemini') {
+    const model = ENV('GEMINI_MODEL') || 'gemini-flash-latest';
+    const sys = messages.filter(m => m.role === 'system').map(m => m.content).join('\n');
+    const contents = messages.filter(m => m.role !== 'system').map(m => ({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: m.content }] }));
+    return httpAI('Gemini', 'https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(model) + ':generateContent', { 'x-goog-api-key': ENV('GEMINI_KEY') },
+      { systemInstruction: { parts: [{ text: sys }] }, contents, generationConfig: { maxOutputTokens: maxTokens } },
+      d => ((d.candidates && d.candidates[0] && d.candidates[0].content && d.candidates[0].content.parts) || []).map(x => x.text || '').join(''));
+  }
+  if (provider === 'openai') {
+    const model = ENV('OPENAI_MODEL') || 'gpt-5.4-mini';
+    return httpAI('OpenAI', 'https://api.openai.com/v1/chat/completions', { Authorization: 'Bearer ' + ENV('OPENAI_KEY') },
+      { model, messages, max_completion_tokens: maxTokens + 1500 }, // extra room for reasoning models
+      d => d.choices && d.choices[0] && d.choices[0].message && d.choices[0].message.content);
+  }
+  if (provider === 'anthropic') {
+    const model = ENV('ANTHROPIC_MODEL') || 'claude-haiku-5-5';
+    const sys = messages.filter(m => m.role === 'system').map(m => m.content).join('\n');
+    return httpAI('Claude', 'https://api.anthropic.com/v1/messages', { 'x-api-key': ENV('ANTHROPIC_KEY'), 'anthropic-version': '2023-06-01' },
+      { model, max_tokens: maxTokens, system: sys, messages: messages.filter(m => m.role !== 'system') },
+      d => (d.content || []).filter(b => b.type === 'text').map(b => b.text).join(''));
+  }
+  if (provider === 'openrouter') {
+    const model = await openRouterModel();
+    return httpAI('OpenRouter', 'https://openrouter.ai/api/v1/chat/completions', { Authorization: 'Bearer ' + ENV('OPENROUTER_KEY') },
+      { model, messages, max_tokens: maxTokens },
+      d => d.choices && d.choices[0] && d.choices[0].message && d.choices[0].message.content);
+  }
+  return groq(messages, maxTokens);
+}
+
+/* ---------------- AI assignment writer ---------------- */
+app.post('/api/assignment/write', async (req, res) => {
+  const provider = pickProvider(req.body), bad = providerError(provider);
+  if (bad) return res.status(400).json({ error: bad });
+  try {
+    const b = req.body || {};
+    const improve = b.mode === 'improve';
+    const type = str(b.type, 40) || 'Assignment', topic = str(b.topic, 200), subject = str(b.subject, 80);
+    const extra = str(b.extra, 600), level = str(b.level, 30) || 'College level';
+    const material = String(b.material || '').slice(0, 12000).trim();
+    const words = Math.min(2000, Math.max(100, Math.round(Number(b.words) || 500)));
+    const course = str(b.course, 60), spec = str(b.spec, 60), uni = str(b.university, 80);
+    const year = Math.min(6, Math.max(1, Math.round(Number(b.year) || 1)));
+    if (!improve && !topic) throw new ApiError('Enter a topic or title.', 400);
+    if (improve && material.split(/\s+/).length < 8) throw new ApiError('Paste the text you want improved.', 400);
+    const system = 'You are a writing assistant for Indian college students. Write clear, correct, well-organised academic work in simple English at the requested level. ' +
+      'Never invent facts, statistics, citations or web links. Use plain text only: short headings on their own line, numbered points or "- " bullets where helpful, no markdown symbols such as ** or #. ' +
+      'For a "Lab file" use this order: Aim, Requirements (software or apparatus), Theory, Algorithm or Procedure, Program or Steps (with code if relevant), Output or Observations, Result, Conclusion. ' +
+      'For "Viva answers" write likely viva questions, each followed by a short answer. For a "Report" or "Seminar report" use Title, Introduction, main sections, Conclusion. For "Application / letter" use the standard Indian format.';
+    const ctx = (course ? 'Student: ' + course + (spec ? ' (' + spec + ')' : '') + ', year ' + year + (uni ? ', ' + uni : '') + '.\n' : '') + (subject ? 'Subject: ' + subject + '\n' : '');
+    const user = improve
+      ? ctx + 'Type of work: ' + type + (topic ? '\nTopic: ' + topic : '') + '\nLevel: ' + level + '\n\nImprove the student\'s own text below. Fix grammar, spelling, clarity and structure. Keep the meaning and the student\'s points. Do not add new facts. Keep roughly the same length.' + (extra ? '\nExtra instructions: ' + extra : '') + '\n\nTEXT:\n' + material
+      : ctx + 'Type of work: ' + type + '\nTopic: ' + topic + '\nLevel: ' + level + '\nLength: about ' + words + ' words.' + (extra ? '\nExtra instructions: ' + extra : '') + (material ? '\n\nUse these notes or material from the student:\n' + material : '') + '\n\nWrite it now.';
+    const text = await ask(provider, [{ role: 'system', content: system }, { role: 'user', content: user }], Math.min(4000, Math.round(words * 2 + 500)));
+    if (!text) throw new ApiError('The AI returned nothing. Please try again.', 502);
+    res.json({ text });
+  } catch (err) { fail(res, err); }
+});
+
+/* ---------------- study helpers for a draft: notes, or rebuild it around the student's own details ---------------- */
+app.post('/api/assignment/learn', async (req, res) => {
+  const provider = pickProvider(req.body), bad = providerError(provider);
+  if (bad) return res.status(400).json({ error: bad });
+  try {
+    const b = req.body || {};
+    const mode = b.mode === 'mine' ? 'mine' : 'notes';
+    const text = String(b.text || '').slice(0, 12000).trim();
+    const details = String(b.details || '').slice(0, 6000).trim();
+    const type = str(b.type, 40) || 'Assignment', topic = str(b.topic, 200), subject = str(b.subject, 80);
+    if (text.split(/\s+/).length < 20) throw new ApiError('Write or paste a draft first.', 400);
+    let system, user, max;
+    if (mode === 'notes') {
+      system = 'You are a friendly study coach for Indian college students. Turn the draft into study material in plain text, no markdown symbols. Use exactly these sections, each heading on its own line: KEY POINTS (6 to 8 short lines), TERMS TO KNOW (term and one-line meaning), VIVA / EXAM QUESTIONS (8 questions, each followed by a short answer), WHAT TO ADD YOURSELF (3 lines on where the student should put their own example, output or understanding). Be accurate and do not invent facts.';
+      user = (subject ? 'Subject: ' + subject + '\n' : '') + 'Type: ' + type + (topic ? '\nTopic: ' + topic : '') + '\n\nDRAFT:\n' + text;
+      max = 2200;
+    } else {
+      if (details.split(/\s+/).length < 8) throw new ApiError('Add your own details first (lab output, class notes, an example you used).', 400);
+      system = 'You help a student rebuild a draft around their own work. Rewrite the draft in simple student-level English so it is based on the details the student supplied. ' +
+        'Use only the facts, outputs, examples and experiences found in the student\'s details or already correct in the draft. Never invent results, numbers, experiments, names or experiences. ' +
+        'Where the student gave nothing for a part, write [add your own example here] or [add your output here]. Keep the same structure and type of work. Plain text only, no markdown symbols.';
+      user = (subject ? 'Subject: ' + subject + '\n' : '') + 'Type: ' + type + (topic ? '\nTopic: ' + topic : '') + '\n\nDRAFT:\n' + text + '\n\nSTUDENT\'S OWN DETAILS:\n' + details;
+      max = 3500;
+    }
+    const out = await ask(provider, [{ role: 'system', content: system }, { role: 'user', content: user }], max);
+    if (!out) throw new ApiError('The AI returned nothing. Please try again.', 502);
+    res.json({ text: out });
+  } catch (err) { fail(res, err); }
+});
+
+/* ---------------- AI or human check (an estimate, never proof) ---------------- */
+const AI_PHRASES = ['moreover', 'furthermore', 'in conclusion', 'in summary', 'it is important to note', 'it is worth noting', 'delve', 'crucial', 'plays a vital role', 'plays a crucial role',
+  "in today's", 'landscape', 'tapestry', 'multifaceted', 'comprehensive', 'leverage', 'utilize', 'pivotal', 'seamless', 'robust', 'holistic', 'foster', 'underscores', 'ensures that',
+  'a wide range of', 'in the realm of', 'paramount', 'navigate the', 'additionally,', 'overall,'];
+function aiStats(text) {
+  const clean = text.replace(/\s+/g, ' ').trim();
+  const sents = clean.split(/(?<=[.!?])\s+/).filter(x => x.split(' ').length > 2);
+  const lens = sents.map(x => x.split(' ').length), n = lens.length || 1;
+  const mean = lens.reduce((a, b) => a + b, 0) / n;
+  const sd = Math.sqrt(lens.reduce((a, b) => a + (b - mean) ** 2, 0) / n);
+  const burst = mean ? sd / mean : 0;
+  const w = (clean.toLowerCase().match(/[a-z']+/g) || []), total = w.length || 1;
+  const low = clean.toLowerCase();
+  let hits = 0; const used = [];
+  AI_PHRASES.forEach(p => { const m = low.split(p).length - 1; if (m) { hits += m; used.push(p.replace(/,$/, '')); } });
+  const per100 = hits / (total / 100);
+  const contr = (clean.match(/\b\w+'(t|s|re|ve|ll|d|m)\b/gi) || []).length / (total / 100);
+  const first = (clean.match(/\b(I|my|me|we|our)\b/g) || []).length / (total / 100);
+  const md = (text.match(/\*\*|^#{1,4}\s/gm) || []).length;
+  const lowerI = (clean.match(/(^|\s)i(\s|')/g) || []).length;
+  const dbl = (text.match(/[^\n] {2,}[^\n]/g) || []).length;
+  let score = 50; const sig = [];
+  if (burst < 0.3) { score += 18; sig.push('Sentences are very even in length, which is typical of AI text.'); }
+  else if (burst < 0.4) { score += 10; sig.push('Sentence lengths vary little.'); }
+  else if (burst < 0.5) score += 4;
+  else if (burst > 0.7) { score -= 12; sig.push('Sentence lengths vary a lot, which is typical of human writing.'); }
+  else if (burst > 0.55) score -= 6;
+  if (per100 >= 2) { score += 16; sig.push('Many stock AI phrases (' + used.slice(0, 4).join(', ') + ').'); }
+  else if (per100 >= 1) { score += 9; sig.push('Some stock AI phrases (' + used.slice(0, 3).join(', ') + ').'); }
+  else if (per100 > 0.4) score += 4;
+  else score -= 4;
+  if (total > 150 && contr === 0) { score += 5; sig.push('No contractions anywhere; very formal tone.'); }
+  else if (contr > 1) { score -= 8; sig.push('Uses contractions like a casual human writer.'); }
+  if (first > 2) { score -= 6; sig.push('Personal voice (I, my, we).'); }
+  if (md >= 3) { score += 8; sig.push('Chat-style formatting (bold marks or markdown headings).'); }
+  if (lowerI > 0) { score -= 8; sig.push('Small slips such as a lowercase "i".'); }
+  if (dbl > 0) { score -= 4; sig.push('Irregular spacing, common in typed human text.'); }
+  return { score: Math.max(3, Math.min(97, Math.round(score))), sig, words: total };
+}
+app.post('/api/ai-detect', async (req, res) => {
+  try {
+    const text = String((req.body || {}).text || '').slice(0, 20000).trim();
+    const wc = (text.match(/\S+/g) || []).length;
+    if (wc < 40) throw new ApiError('Paste at least 40 words. 150 or more gives a better estimate.', 400);
+    const local = aiStats(text);
+    let llm = null, reasons = [], flagged = [];
+    if (!keyBad) {
+      try {
+        const system = 'You are a careful text analyst. Estimate whether a passage was written by an AI language model or by a human student. Consider uniform structure, generic phrasing, no personal detail, flawless grammar, repeated transitions and hedging. ' +
+          'Be calibrated: use 40 to 60 when unsure, and never claim certainty. Short or formal texts are hard to judge.';
+        const user = 'TEXT:\n' + text.slice(0, 7000) + '\n\nShape: {"ai_percent":0,"reasons":["short reason"],"flagged":["exact phrase copied from the text, max 12 words"]}. Give at most 4 reasons and at most 3 flagged phrases.';
+        const d = await askJSON(system, user, 900);
+        const v = Number(d && d.ai_percent);
+        if (Number.isFinite(v)) llm = Math.max(0, Math.min(100, v));
+        reasons = (Array.isArray(d && d.reasons) ? d.reasons : []).map(x => str(x, 140)).filter(Boolean).slice(0, 4);
+        const lt = text.toLowerCase();
+        flagged = (Array.isArray(d && d.flagged) ? d.flagged : []).map(x => str(x, 120)).filter(x => x && lt.includes(x.toLowerCase())).slice(0, 3);
+      } catch (e) { /* fall back to the local check only */ }
+    }
+    const ai = llm == null ? local.score : Math.round(0.45 * local.score + 0.55 * llm);
+    res.json({
+      ai, words: wc, conf: wc < 120 || llm == null ? 'low' : 'medium',
+      signals: local.sig.concat(reasons).slice(0, 8), flagged,
+      note: 'This is an estimate from writing patterns, not proof. Detectors can be wrong, especially on short, formal or non-native English text, so never use this alone to accuse anyone.' +
+        (llm == null ? ' The AI part of the check was not available, so only the pattern check was used.' : '')
+    });
+  } catch (err) { fail(res, err); }
+});
+
+// 3) Flashcards from the student's own material
+app.post('/api/cards/generate', async (req, res) => {
+  if (keyBad) return res.status(400).json({ error: KEY_MSG });
+  try {
+    const b = req.body || {};
+    const text = String(b.text || '').replace(/\s+/g, ' ').trim().slice(0, 9000);
+    if (text.length < 80) throw new ApiError('Add a few more lines of notes first.', 400);
+    const title = str(b.title, 80) || 'Your notes';
+    const count = Math.min(25, Math.max(5, Math.round(Number(b.count) || 12)));
+    const system = 'You make flashcards for college students from their own study material. Use ONLY the material given.';
+    const user = 'Material title: ' + title + '\nMaterial:\n' + text + '\n\nWrite ' + count + ' flashcards. Each card tests one idea. "f" is the front: a short question or a term. "b" is the back: a short clear answer (max 35 words). "topic" is a 2 to 4 word topic label.\n' +
+      'Shape: {"cards":[{"f":"","b":"","topic":""}]}';
+    const data = await askJSON(system, user, 3200);
+    const arr = Array.isArray(data) ? data : (data && data.cards) || [];
+    const seen = new Set();
+    const cards = arr.map(x => ({ f: str(x && x.f, 200), b: str(x && x.b, 400), topic: str(x && x.topic, 40) }))
+      .filter(x => x.f && x.b && !seen.has(x.f.toLowerCase()) && seen.add(x.f.toLowerCase())).slice(0, count);
+    if (cards.length < 3) throw new ApiError('Could not make flashcards from that text. Try again with more detailed notes.', 502);
+    res.json({ cards });
+  } catch (err) { fail(res, err); }
 });
 
 function start(port, tries) {
