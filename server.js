@@ -436,6 +436,52 @@ app.post('/api/quiz/generate', async (req, res) => {
   } catch (err) { fail(res, err); }
 });
 
+// 2a) Coding practice question generator (fix-the-bug or write-the-code)
+app.post('/api/dsa/generate', async (req, res) => {
+  if (keyBad) return res.status(400).json({ error: KEY_MSG });
+  try {
+    const b = req.body || {};
+    const topic = str(b.topic, 40) || 'Arrays';
+    const level = ['Easy', 'Medium', 'Hard'].includes(b.level) ? b.level : 'Easy';
+    const kind = b.kind === 'write' ? 'write' : 'fix';
+    const seed = Math.floor(Math.random() * 1e6);
+    const system = 'You write original coding practice questions for B.Tech students in plain JavaScript (no imports, no classes). Every question must be correct and testable with plain JSON inputs and outputs.';
+    const user = 'Topic: ' + topic + '. Difficulty: ' + level + '. Variation seed: ' + seed + ' (choose a different problem each time). Type: ' +
+      (kind === 'fix' ? 'FIX THE BUG. "code" is a complete solution with exactly one realistic bug (off-by-one, wrong comparison, missing edge case) that makes at least one test fail.' : 'WRITE THE CODE. "code" is only the function signature with a comment inside.') +
+      ' Return {"title":"","desc":"","fn":"","code":"","ref":"","tests":[{"i":[],"o":null}],"hints":["","",""],"sol":""}. ' +
+      '"desc" states the task with one example. "fn" is the function name. "ref" is a complete CORRECT solution using the same function name. ' +
+      'Give 5 tests including edge cases; "i" is the array of arguments, "o" the expected return value, all plain JSON. The function must return its answer, not print it. ' +
+      'Give 3 hints from gentle to nearly the answer. "sol" is one short sentence describing the fix or approach.';
+    const d = await askJSON(system, user, 2600);
+    const tests = Array.isArray(d && d.tests) ? d.tests.filter(t => t && Array.isArray(t.i) && 'o' in t).slice(0, 8) : [];
+    const hints = Array.isArray(d && d.hints) ? d.hints.map(x => str(x, 200)).filter(Boolean).slice(0, 3) : [];
+    if (!str(d && d.title, 80) || !/^[A-Za-z_$][\\w$]*$/.test(String(d.fn || '')) || !d.code || !d.ref || tests.length < 3 || hints.length < 3)
+      throw new ApiError('The AI made a weak question. Please try again.', 502);
+    res.json({ q: { title: str(d.title, 80), desc: str(d.desc, 700), fn: d.fn, code: String(d.code).slice(0, 3000), ref: String(d.ref).slice(0, 3000), tests, hints, sol: str(d.sol, 300), t: topic, d: level, k: kind } });
+  } catch (err) { fail(res, err); }
+});
+
+// 2a-2) Coding coach: guiding hint (never the answer) or automatic fix
+app.post('/api/dsa/help', async (req, res) => {
+  if (keyBad) return res.status(400).json({ error: KEY_MSG });
+  try {
+    const b = req.body || {};
+    const code = String(b.code || '').slice(0, 4000), title = str(b.title, 80), desc = String(b.desc || '').slice(0, 800), fl = str(b.fail, 400), ask = str(b.ask, 300);
+    const info = 'Problem: ' + title + '\n' + desc + '\nStudent code:\n' + code + '\nLast test result: ' + (fl || 'not run yet');
+    if (b.mode === 'fix') {
+      const d = await askJSON('You fix JavaScript code. Keep the same function name and change as little as possible.', info + '\nReturn {"code":"the full corrected code","note":"one short sentence saying what was wrong"}', 1800);
+      const fixed = String((d && d.code) || '').slice(0, 4000);
+      if (!fixed) throw new ApiError('The AI could not fix it. Please try again.', 502);
+      return res.json({ code: fixed, note: str(d.note, 200) });
+    }
+    const out = await groq([
+      { role: 'system', content: 'You are a friendly coding coach. NEVER write the corrected code and never state the exact fix. Point to the part of the code to look at and ask one guiding question. Plain text, no code blocks, at most 60 words.' },
+      { role: 'user', content: info + '\nStudent question: ' + (ask || 'I am stuck. Where should I look?') }
+    ], 400);
+    res.json({ text: String(out || '').trim() });
+  } catch (err) { fail(res, err); }
+});
+
 // 2b) Quiz for a subject of the student's course (no notes needed)
 app.post('/api/quiz/subject', async (req, res) => {
   if (keyBad) return res.status(400).json({ error: KEY_MSG });
